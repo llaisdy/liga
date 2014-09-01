@@ -1,0 +1,6 @@
+%%-*- mode: erlang -*-
+
+{application, liga,
+ [{description,"Language Identification: a Graph-based Approach"},
+  {vsn,"0.0.1"}
+ ]}.
