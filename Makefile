@@ -5,3 +5,7 @@ all:
 
 clean:
 	rm -fr ebin
+
+test: all
+	erlc -o ebin test/liga_tests.erl
+
