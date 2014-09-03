@@ -1,0 +1,2 @@
+erl -pa ebin/ noshell -eval "eunit:test(liga)" -s init stop
+

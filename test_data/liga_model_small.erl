@@ -1,39 +1,10 @@
--module(liga_tests).
+-module(liga_model_small).
 
--include_lib("eunit/include/eunit.hrl").
+-export([version/0, model/0]).
 
-build_model_small_test_() ->
-    {ligaModel, ELs, NW, EW, ENs, EWs} = get_model_small(),
-    {ligaModel, ELs, NW, EW, ANs, AWs} = lists:foldl(fun({String, Label}, Model) ->
-							      liga:import_string(Model, 
-										 String, 
-										 Label)
-						      end,
-						      liga:new(),
-						      [{"is dit een test", nl},
-						       {"is this a test", en}]
-						     ),
-    [?_assertEqual(lists:sort(ENs), lists:sort(ANs)),
-     ?_assertEqual(lists:sort(EWs), lists:sort(AWs))].
+version()-> "2014-09-03T11:40:45.060842".
 
-classify_small_test_() ->
-    M = get_model_small(),
-    Exp = [{nl,0.5744047619047619}, {en,0.14583333333333331}],
-    Act = liga:classify(M, "is dit ook een test"),
-    ?_assertEqual(Exp, Act).
-
-export_erl_small_test_() ->
-    M = get_model_small(),
-%%    ok = liga:export_erl(M, liga_model_small),
-    ok = liga:update_model("test_data/liga_model_small.erl"),
-    Exp = liga:classify(M, "is dit ook een test"),
-    Act = liga:classify(liga_model_small, "is dit ook een test"),
-    ?_assertEqual(Exp, Act).
-
-
-%%%% helpers
-
-get_model_small() ->
+model() ->
     {ligaModel,
      [en, nl], 29, 27, 
      [

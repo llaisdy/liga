@@ -2,62 +2,75 @@
 
 -compile([export_all]).
 
--export([classify/1, classify/2, 
-	 get_likely/1,
+-export([get_likely/1,
 	 new/0, import_string/3, 
+	 classify/1, classify/2,
+	 export_erl/2,
 	 update_model/1, update_model/2]).
 
 -define(POINT_START, 32).
 -define(POINT_END, 32).
 
-
--record(liga_model, {labels=[] :: list(),
+%% nb use "ligaModel" not liga_model in case of clashes with
+%% other uses of "liga_model"
+-record(ligaModel, {labels=[] :: list(),
 		     node_weights=0 :: non_neg_integer(), 
 		     edge_weights=0 :: non_neg_integer(), 
 		     nodes=[] :: list(), 
 		     edges=[] :: list()}).
 
+-type ligaModel() :: #ligaModel{}.
 -type label() :: atom().
 -type score() :: float().
 -type label_score() :: {label(), score()}.
 -type liga_score()  :: list(label_score()). % sorted by score
--type liga_model() :: #liga_model{}.
 -type mnode() :: any().
 -type medge() :: {node(), node()}.
 -type trigram() :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}.
 -type weighted_item() :: {any(), non_neg_integer()}.
 
--spec new() -> liga_model().
+-spec new() -> ligaModel().
 new() ->
-    #liga_model{}.
+    #ligaModel{}.
 
--spec import_string(liga_model(), string(), label()) -> liga_model().
+-spec import_string(ligaModel(), string(), label()) -> ligaModel().
 import_string(Model, String, Label) ->
     Ts = string_to_trigrams(String),
     M1 = lists:foldl(fun(T, Acc1) ->
-			      import_node(T, Label, Acc1)
+			      import_node(Acc1, T, Label)
 		     end, 
 		     Model, Ts),
-    lists:foldl(fun(E, Acc2) ->
-			import_edge(E, Label, Acc2)
+    M2 = lists:foldl(fun(E, Acc2) ->
+			import_edge(Acc2, E, Label)
 		end, 
-		M1, get_edges(Ts)).
+		M1, get_edges(Ts)),
+    update_labels(M2, Label).
 
--spec import_node(liga_model(), mnode(), label()) -> liga_model().
-import_node(Model=#liga_model{nodes=NL, node_weights=NW}, Node, Label) ->
+update_labels(M=#ligaModel{labels=[]}, L) ->
+    M#ligaModel{labels=[L]};
+update_labels(M=#ligaModel{labels=Ls}, L) ->
+    case lists:member(L, Ls) of
+	true ->
+	    M;
+	false ->
+	    M#ligaModel{labels=[L|Ls]}
+    end.
+
+-spec import_node(ligaModel(), mnode(), label()) -> ligaModel().
+import_node(Model=#ligaModel{nodes=NL, node_weights=NW}, Node, Label) ->
     Nodes = ofl(NL),
     NewNodes = orddict:update(Node, fun(Ws) ->
 					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
 				 end, [{Label,1}], Nodes),
-    Model#liga_model{nodes=NewNodes, node_weights=incr(NW)}.
+    Model#ligaModel{nodes=NewNodes, node_weights=incr(NW)}.
 
--spec import_edge(liga_model(), medge(), label()) -> liga_model().
-import_edge(Model=#liga_model{edges=EL, edge_weights=EW}, Edge, Label) ->
+-spec import_edge(ligaModel(), medge(), label()) -> ligaModel().
+import_edge(Model=#ligaModel{edges=EL, edge_weights=EW}, Edge, Label) ->
     Edges = ofl(EL),
     NewEdges = orddict:update(Edge, fun(Ws) ->
 					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
 				 end, [{Label,1}], Edges),
-    Model#liga_model{edges=NewEdges, edge_weights=incr(EW)}.
+    Model#ligaModel{edges=NewEdges, edge_weights=incr(EW)}.
 
 ofl(L) ->
     orddict:from_list(L).
@@ -66,11 +79,11 @@ ofl(L) ->
 
 -spec classify(string()) -> liga_score().
 classify(String) ->
-    classify(String, liga_model).
+    classify(ligaModel, String).
 
--spec classify(string(), atom()) -> liga_score().
-classify(String, ModelName) ->
-    SG = make_sub_graph(String, ModelName),
+-spec classify(atom() | ligaModel(), string()) -> liga_score().
+classify(Model, String) ->
+    SG = make_sub_graph(Model, String),
     score(SG).
 
 -spec get_likely(liga_score()) -> list(label()).
@@ -104,23 +117,25 @@ update_model(beam, M) ->
 	    {error, {E,R}}
     end.
 
+-spec export_erl(ligaModel(), atom()) -> ok.
+export_erl(Model, Name) ->
+    todo.
 
 %%%% private
 
--spec make_sub_graph(string(), atom() | liga_model()) -> liga_model().
-make_sub_graph(S, M) when is_atom(M) ->
+-spec make_sub_graph(atom() | ligaModel(), string()) -> ligaModel().
+make_sub_graph(M, S) when is_atom(M) ->
     LG = M:model(),
-    make_sub_graph(S, LG);
+    make_sub_graph(LG, S);
 
-make_sub_graph(S, LG) ->
+make_sub_graph(#ligaModel{nodes=LNs, edges=LEs}, S) ->
     Ts = string_to_trigrams(S),
-    {nodes, LNs} = lists:keyfind(nodes, 1, LG),
-    {edges, LEs} = lists:keyfind(edges, 1, LG),
     Ns = pull(Ts, LNs),
     Es = pull(get_edges(Ts), LEs),
     NW = get_weights(Ns),
     EW = get_weights(Es),
-    [{node_weights, NW}, {edge_weights, EW},{nodes, Ns},{edges, Es}].
+    Ls = get_labels(Ns),
+    #ligaModel{labels=Ls, node_weights=NW, edge_weights=EW, nodes=Ns, edges=Es}.
 
 -spec string_to_trigrams(string()) -> list(trigram()).
 string_to_trigrams([C]) ->
@@ -150,6 +165,16 @@ get_weights(Xs) ->
 		    end, [], Xs),
     lists:sum([Y || {_,Y} <- D]).
 
+get_labels(Ns) ->
+    lists:foldl(fun({_,V}, Acc) ->
+			case lists:member(V, Acc) of
+			    true ->
+				Acc;
+			    false ->
+				[V|Acc]
+			end
+		end, [], Ns).
+
 -spec incr(non_neg_integer()) -> non_neg_integer().
 incr(X) -> X+1.
 
@@ -177,8 +202,8 @@ pull(X, L) ->
 			end
 		end, [], X).
 
--spec score(liga_model()) -> liga_score().
-score([{node_weights, NW}, {edge_weights, EW},{nodes, Ns},{edges, Es}]) ->
+-spec score(ligaModel()) -> liga_score().
+score(#ligaModel{node_weights=NW, edge_weights=EW,nodes=Ns,edges=Es}) ->
     S1 = score_acc(Ns, NW, []),
     S2 = score_acc(Es, EW, S1),
     lists:sort(fun({_,V},{_,W}) -> V > W end,
