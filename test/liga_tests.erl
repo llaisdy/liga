@@ -10,7 +10,7 @@ build_model_small_test_() ->
 		      [{"is dit een test", nl},
 		       {"is this a test", en}],
 		      liga:new()),
-    ?_assertEqual(E,A).
+    ?_assertEqual(Exp,Act).
 
 
 %%%% helpers

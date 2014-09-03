@@ -11,11 +11,11 @@
 -define(POINT_END, 32).
 
 
--record(liga_model, {labels :: list(),
-		     node_weights :: non_neg_integer(), 
-		     edge_weights :: non_neg_integer(), 
-		     nodes :: list(), 
-		     edges :: list()}).
+-record(liga_model, {labels=[] :: list(),
+		     node_weights=0 :: non_neg_integer(), 
+		     edge_weights=0 :: non_neg_integer(), 
+		     nodes=[] :: list(), 
+		     edges=[] :: list()}).
 
 -type label() :: atom().
 -type score() :: float().
@@ -27,9 +27,9 @@
 -type trigram() :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}.
 -type weighted_item() :: {any(), non_neg_integer()}.
 
+-spec new() -> liga_model().
 new() ->
-    {liga_model, {labels, []}, {node_weights, 0}, {edge_weights, 0},
-     {nodes, []}, {edges, []}}.
+    #liga_model{}.
 
 -spec import_string(liga_model(), string(), label()) -> liga_model().
 import_string(Model, String, Label) ->
@@ -46,7 +46,7 @@ import_string(Model, String, Label) ->
 -spec import_node(liga_model(), mnode(), label()) -> liga_model().
 import_node(Model=#liga_model{nodes=NL, node_weights=NW}, Node, Label) ->
     Nodes = ofl(NL),
-    NewNodes = orddict:update(X, fun(Ws) ->
+    NewNodes = orddict:update(Node, fun(Ws) ->
 					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
 				 end, [{Label,1}], Nodes),
     Model#liga_model{nodes=NewNodes, node_weights=incr(NW)}.
@@ -54,7 +54,7 @@ import_node(Model=#liga_model{nodes=NL, node_weights=NW}, Node, Label) ->
 -spec import_edge(liga_model(), medge(), label()) -> liga_model().
 import_edge(Model=#liga_model{edges=EL, edge_weights=EW}, Edge, Label) ->
     Edges = ofl(EL),
-    NewEdges = orddict:update(X, fun(Ws) ->
+    NewEdges = orddict:update(Edge, fun(Ws) ->
 					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
 				 end, [{Label,1}], Edges),
     Model#liga_model{edges=NewEdges, edge_weights=incr(EW)}.
@@ -78,12 +78,6 @@ get_likely([]) -> [];
 get_likely(Ls) ->
     Mean = lists:sum([Y || {_,Y} <- Ls])  /  length(Ls),
     [L || {L,_} <- lists:filter(fun({_,N}) -> N >= Mean end, Ls)].
-
--spec new() -> liga_model().
-new() ->
-    orddict:from_list([{node_weights, 0}, {edge_weights, 0}, 
-		       {nodes, []}, 
-		       {edges, []}]).
 
 -spec update_model(string()) -> ok | {error, tuple()}.
 update_model(Filename) ->
