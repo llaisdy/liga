@@ -13,13 +13,15 @@
 
 %% nb use "ligaModel" not liga_model in case of clashes with
 %% other uses of "liga_model"
--record(ligaModel, {labels=[] :: list(),
-		     node_weights=0 :: non_neg_integer(), 
-		     edge_weights=0 :: non_neg_integer(), 
-		     nodes=[] :: list(), 
-		     edges=[] :: list()}).
 
--type ligaModel() :: #ligaModel{}.
+%% TODO: type spec of rligaModel map
+%% -record(ligaModel, {labels=[] :: list(),
+%% 		     node_weights=0 :: non_neg_integer(), 
+%% 		     edge_weights=0 :: non_neg_integer(), 
+%% 		     nodes=[] :: list(), 
+%% 		     edges=[] :: list()}).
+
+-type ligaModel() :: #{}.
 -type label() :: atom().
 -type score() :: float().
 -type label_score() :: {label(), score()}.
@@ -27,11 +29,11 @@
 -type mnode() :: any().
 -type medge() :: {node(), node()}.
 -type trigram() :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}.
--type weighted_item() :: {any(), non_neg_integer()}.
+%% -type weighted_item() :: {any(), non_neg_integer()}.
 
 -spec new() -> ligaModel().
 new() ->
-    #ligaModel{}.
+    #{labels => [], node_weights => 0, edge_weights => 0, nodes => #{}, edges => #{}}.
 
 -spec import_string(ligaModel(), string(), label()) -> ligaModel().
 import_string(Model, String, Label) ->
@@ -46,36 +48,45 @@ import_string(Model, String, Label) ->
 		M1, get_edges(Ts)),
     update_labels(M2, Label).
 
-update_labels(M=#ligaModel{labels=[]}, L) ->
-    M#ligaModel{labels=[L]};
-update_labels(M=#ligaModel{labels=Ls}, L) ->
+update_labels(#{labels:=[]}=M, L) ->
+    M#{labels:=[L]};
+update_labels(#{labels:=Ls}=M, L) ->
     case lists:member(L, Ls) of
 	true ->
 	    M;
 	false ->
-	    M#ligaModel{labels=[L|Ls]}
+	    M#{labels:=[L|Ls]}
     end.
 
 -spec import_node(ligaModel(), mnode(), label()) -> ligaModel().
-import_node(Model=#ligaModel{nodes=NL, node_weights=NW}, Node, Label) ->
-    Nodes = ofl(NL),
-    NewNodes = orddict:update(Node, fun(Ws) ->
-					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
-				 end, [{Label,1}], Nodes),
-    Model#ligaModel{nodes=NewNodes, node_weights=incr(NW)}.
+import_node(#{nodes:=Nodes, node_weights:=NW}=Model, Node, Label) ->
+    NewNodes = case maps:get(Node, Nodes, #{}) of
+		   #{} ->
+		       maps:put(Node, maps:put(Label, 1, #{}), #{});
+		   NodeMap ->
+		       case maps:get(Label, NodeMap, #{}) of
+			   #{} ->
+			       maps:put(Label, 1, NodeMap);
+			   N ->
+			       maps:put(Label, N+1, NodeMap)
+		       end
+	       end,
+    Model#{nodes:=NewNodes, node_weights:=NW+1}.
 
 -spec import_edge(ligaModel(), medge(), label()) -> ligaModel().
-import_edge(Model=#ligaModel{edges=EL, edge_weights=EW}, Edge, Label) ->
-    Edges = ofl(EL),
-    NewEdges = orddict:update(Edge, fun(Ws) ->
-					 orddict:update(Label, fun incr/1, 1, ofl(Ws))
-				 end, [{Label,1}], Edges),
-    Model#ligaModel{edges=NewEdges, edge_weights=incr(EW)}.
-
-ofl(L) ->
-    orddict:from_list(L).
-
-
+import_edge(#{edges:=Edges, edge_weights:=EW}=Model, Edge, Label) ->
+    NewEdges = case maps:get(Edge, Edges, #{}) of
+		   #{} ->
+		       maps:put(Edge, maps:put(Label, 1, #{}), #{});
+		   EdgeMap ->
+		       case maps:get(Label, EdgeMap, #{}) of
+			   #{} ->
+			       maps:put(Label, 1, EdgeMap);
+			   N ->
+			       maps:put(Label, N+1, EdgeMap)
+		       end
+	       end,
+    Model#{edges:=NewEdges, edge_weights:=EW+1}.
 
 -spec classify(string()) -> liga_score().
 classify(String) ->
@@ -128,14 +139,14 @@ make_sub_graph(M, S) when is_atom(M) ->
     LG = M:model(),
     make_sub_graph(LG, S);
 
-make_sub_graph(#ligaModel{nodes=LNs, edges=LEs}, S) ->
+make_sub_graph(#{nodes:=LNs, edges:=LEs}, S) ->
     Ts = string_to_trigrams(S),
     Ns = pull(Ts, LNs),
     Es = pull(get_edges(Ts), LEs),
     NW = get_weights(Ns),
     EW = get_weights(Es),
     Ls = get_labels(Ns),
-    #ligaModel{labels=Ls, node_weights=NW, edge_weights=EW, nodes=Ns, edges=Es}.
+    #{labels => Ls, node_weights => NW, edge_weights => EW, nodes => Ns, edges => Es}.
 
 -spec string_to_trigrams(string()) -> list(trigram()).
 string_to_trigrams([C]) ->
@@ -158,22 +169,15 @@ get_trigrams([S1, S2]) ->
 get_trigrams([H1, H2, H3 | T]) ->
     [{H1, H2, H3} | get_trigrams([H2, H3 | T])].
 
--spec get_weights(list(weighted_item())) -> non_neg_integer().
+-spec get_weights(map()) -> non_neg_integer().
 get_weights(Xs) ->
-    D = lists:foldl(fun({_,V}, Acc) ->
-			    merge(1, V, Acc)
-		    end, [], Xs),
+    D = maps:values(Xs),
     lists:sum([Y || {_,Y} <- D]).
 
 get_labels(Ns) ->
-    lists:foldl(fun({_,V}, Acc) ->
-			case lists:member(V, Acc) of
-			    true ->
-				Acc;
-			    false ->
-				[V|Acc]
-			end
-		end, [], Ns).
+    lists:merge(lists:map(fun(LabMap) ->
+				  lists:sort(maps:keys(LabMap))
+			  end, maps:values(Ns))).
 
 -spec incr(non_neg_integer()) -> non_neg_integer().
 incr(X) -> X+1.
@@ -189,31 +193,29 @@ merge(N, L1, L2) ->
 			end
 		end, L2, L1).
 
--spec pull(list(mnode() | medge()), list(weighted_item())) 
-	  -> list(weighted_item()).
-pull(X, L) ->
+-spec pull(list(), map()) -> map().
+pull(X, M) ->
     lists:foldl(fun(T, Acc) ->
-			V = lists:keyfind(T, 1, L),
-			W = lists:keyfind(T, 1, Acc),
-			case {V,W} of 
-			    {false, _} -> Acc;
-			    {_, false} -> [V | Acc];
-			    _ -> Acc
+			case maps:find(T, M) of
+			    {ok, V} ->
+				maps:put(T, V, Acc);
+			    error ->
+				Acc
 			end
-		end, [], X).
+		end, #{}, X).
 
 -spec score(ligaModel()) -> liga_score().
-score(#ligaModel{node_weights=NW, edge_weights=EW,nodes=Ns,edges=Es}) ->
+score(#{node_weights:=NW, edge_weights:=EW,nodes:=Ns,edges:=Es}) ->
     S1 = score_acc(Ns, NW, []),
     S2 = score_acc(Es, EW, S1),
     lists:sort(fun({_,V},{_,W}) -> V > W end,
 	       lists:map(fun({K,V}) -> {K, V/2} end, S2)).
 
--spec score_acc(list(weighted_item()), non_neg_integer(), liga_score()) 
+-spec score_acc(map(), non_neg_integer(), liga_score()) 
 	       -> liga_score().
 score_acc(Xs, W, S) ->
-    lists:foldl(fun({_,V}, Acc) -> 
-			D = W * length(V),  % Ivan's original research
-			merge(D, V, Acc)
-		end, S, Xs).
+    maps:fold(fun(_, V, Acc) -> 
+		      D = W * length(V),  % Ivan's original research
+		      merge(D, V, Acc)
+	      end, S, Xs).
 
