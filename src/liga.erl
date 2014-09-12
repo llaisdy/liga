@@ -60,31 +60,35 @@ update_labels(#{labels:=Ls}=M, L) ->
 
 -spec import_node(ligaModel(), mnode(), label()) -> ligaModel().
 import_node(#{nodes:=Nodes, node_weights:=NW}=Model, Node, Label) ->
-    NewNodes = case maps:get(Node, Nodes, #{}) of
-		   #{} ->
-		       maps:put(Node, maps:put(Label, 1, #{}), #{});
-		   NodeMap ->
-		       case maps:get(Label, NodeMap, #{}) of
-			   #{} ->
-			       maps:put(Label, 1, NodeMap);
-			   N ->
-			       maps:put(Label, N+1, NodeMap)
-		       end
+    NewNodes = case maps:get(Node, Nodes, x) of
+		   x ->
+		       io:format("new node~n"),
+		       maps:put(Node, maps:put(Label, 1, #{}), Nodes);
+		   LabelMap ->
+		       NewLabelMap = case maps:get(Label, LabelMap, x) of
+				   x ->
+				       maps:put(Label, 1, LabelMap);
+				   N ->
+				       maps:update(Label, N+1, LabelMap)
+			       end,
+		       io:format("~p  -->  ~p~n", [LabelMap, NewLabelMap]),
+		       maps:update(Node, NewLabelMap, Nodes)
 	       end,
     Model#{nodes:=NewNodes, node_weights:=NW+1}.
 
 -spec import_edge(ligaModel(), medge(), label()) -> ligaModel().
 import_edge(#{edges:=Edges, edge_weights:=EW}=Model, Edge, Label) ->
-    NewEdges = case maps:get(Edge, Edges, #{}) of
-		   #{} ->
-		       maps:put(Edge, maps:put(Label, 1, #{}), #{});
-		   EdgeMap ->
-		       case maps:get(Label, EdgeMap, #{}) of
-			   #{} ->
-			       maps:put(Label, 1, EdgeMap);
-			   N ->
-			       maps:put(Label, N+1, EdgeMap)
-		       end
+    NewEdges = case maps:get(Edge, Edges, x) of
+		   x ->
+		       maps:put(Edge, maps:put(Label, 1, #{}), Edges);
+		   LabelMap ->
+		       NewLabelMap = case maps:get(Label, LabelMap, x) of
+					 x ->
+					     maps:put(Label, 1, LabelMap);
+					 N ->
+					     maps:put(Label, N+1, LabelMap)
+				     end,
+		       maps:put(Edge, NewLabelMap, Edges)
 	       end,
     Model#{edges:=NewEdges, edge_weights:=EW+1}.
 
@@ -171,27 +175,34 @@ get_trigrams([H1, H2, H3 | T]) ->
 
 -spec get_weights(map()) -> non_neg_integer().
 get_weights(Xs) ->
-    D = maps:values(Xs),
-    lists:sum([Y || {_,Y} <- D]).
+    Ms = maps:values(Xs),
+    lists:sum([lists:sum(maps:values(M)) || M <- Ms]).
 
 get_labels(Ns) ->
-    lists:merge(lists:map(fun(LabMap) ->
-				  lists:sort(maps:keys(LabMap))
-			  end, maps:values(Ns))).
+    maps:fold(fun(_N, Ls, Acc1) ->
+		      maps:fold(fun(L, _W, Acc2) ->
+					case lists:member(L, Acc2) of
+					    true  -> Acc2;
+					    false -> [L | Acc2]
+					end
+				end,
+				Acc1, Ls)
+	      end,
+	      [], Ns).
 
 -spec incr(non_neg_integer()) -> non_neg_integer().
 incr(X) -> X+1.
 
--spec merge(float() | integer(), list(), list()) -> list().
-merge(N, L1, L2) ->
-    lists:foldl(fun({K, V}, Acc) ->
-			case lists:keyfind(K, 1, Acc) of
-			    false ->
-				[{K, V/N} | Acc];
-			    {K, W} ->
-				[{K, W + (V/N)} | lists:delete({K,W},Acc)]
-			end
-		end, L2, L1).
+-spec merge(float() | integer(), map(), list()) -> list().
+merge(N, M, L) ->
+    maps:fold(fun(K, V, Acc) ->
+		      case lists:keyfind(K, 1, Acc) of
+			  false ->
+			      [{K, V/N} | Acc];
+			  {K, W} ->
+			      [{K, W + (V/N)} | lists:delete({K,W},Acc)]
+		      end
+	      end, L, M).
 
 -spec pull(list(), map()) -> map().
 pull(X, M) ->
@@ -215,7 +226,7 @@ score(#{node_weights:=NW, edge_weights:=EW,nodes:=Ns,edges:=Es}) ->
 	       -> liga_score().
 score_acc(Xs, W, S) ->
     maps:fold(fun(_, V, Acc) -> 
-		      D = W * length(V),  % Ivan's original research
+		      D = W * maps:size(V),  % Ivan's original research
 		      merge(D, V, Acc)
 	      end, S, Xs).
 
