@@ -1,11 +1,8 @@
 -module(liga).
 
--compile([export_all]).
-
 -export([get_likely/1,
 	 new/0, import_string/3, 
 	 classify/1, classify/2,
-	 export_erl/2,
 	 update_model/1, update_model/2]).
 
 -define(POINT_START, 32).
@@ -132,10 +129,6 @@ update_model(beam, M) ->
 	    {error, {E,R}}
     end.
 
--spec export_erl(ligaModel(), atom()) -> ok.
-export_erl(Model, Name) ->
-    todo.
-
 %%%% private
 
 -spec make_sub_graph(atom() | ligaModel(), string()) -> ligaModel().
@@ -189,9 +182,6 @@ get_labels(Ns) ->
 				Acc1, Ls)
 	      end,
 	      [], Ns).
-
--spec incr(non_neg_integer()) -> non_neg_integer().
-incr(X) -> X+1.
 
 -spec merge(float() | integer(), map(), list()) -> list().
 merge(N, M, L) ->
