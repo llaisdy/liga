@@ -1,9 +1,10 @@
 -module(liga).
 
--export([get_likely/1,
-	 new/0, import_string/3, 
-	 classify/1, classify/2,
-	 update_model/1, update_model/2]).
+-export([new/0, 
+	 import_string/3, 
+	 classify/2,
+	 get_likely/1
+	]).
 
 -define(POINT_START, 32).
 -define(POINT_END, 32).
@@ -11,14 +12,11 @@
 %% nb use "ligaModel" not liga_model in case of clashes with
 %% other uses of "liga_model"
 
-%% TODO: type spec of rligaModel map
-%% -record(ligaModel, {labels=[] :: list(),
-%% 		     node_weights=0 :: non_neg_integer(), 
-%% 		     edge_weights=0 :: non_neg_integer(), 
-%% 		     nodes=[] :: list(), 
-%% 		     edges=[] :: list()}).
-
--type ligaModel() :: #{}.
+-type ligaModel() :: #{labels => list(label()),
+		       node_weights => non_neg_integer(), 
+		       edge_weights => non_neg_integer(), 
+		       nodes => map(), 
+		       edges => map()}.
 -type label() :: atom().
 -type score() :: float().
 -type label_score() :: {label(), score()}.
@@ -26,7 +24,8 @@
 -type mnode() :: any().
 -type medge() :: {node(), node()}.
 -type trigram() :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}.
-%% -type weighted_item() :: {any(), non_neg_integer()}.
+
+%%%% api
 
 -spec new() -> ligaModel().
 new() ->
@@ -45,6 +44,20 @@ import_string(Model, String, Label) ->
 		M1, get_edges(Ts)),
     update_labels(M2, Label).
 
+-spec classify(atom() | ligaModel(), string()) -> liga_score().
+classify(Model, String) ->
+    SG = make_sub_graph(Model, String),
+    score(SG).
+
+-spec get_likely(liga_score()) -> list(label()).
+get_likely([]) -> [];
+get_likely(Ls) ->
+    Mean = lists:sum([Y || {_,Y} <- Ls])  /  length(Ls),
+    [L || {L,_} <- lists:filter(fun({_,N}) -> N >= Mean end, Ls)].
+
+%%%% private
+
+-spec update_labels(ligaModel(), label()) -> ligaModel().
 update_labels(#{labels:=[]}=M, L) ->
     M#{labels:=[L]};
 update_labels(#{labels:=Ls}=M, L) ->
@@ -57,85 +70,34 @@ update_labels(#{labels:=Ls}=M, L) ->
 
 -spec import_node(ligaModel(), mnode(), label()) -> ligaModel().
 import_node(#{nodes:=Nodes, node_weights:=NW}=Model, Node, Label) ->
-    NewNodes = case maps:get(Node, Nodes, x) of
-		   x ->
-		       io:format("new node~n"),
-		       maps:put(Node, maps:put(Label, 1, #{}), Nodes);
-		   LabelMap ->
-		       NewLabelMap = case maps:get(Label, LabelMap, x) of
-				   x ->
-				       maps:put(Label, 1, LabelMap);
-				   N ->
-				       maps:update(Label, N+1, LabelMap)
-			       end,
-		       io:format("~p  -->  ~p~n", [LabelMap, NewLabelMap]),
-		       maps:update(Node, NewLabelMap, Nodes)
-	       end,
+    NewNodes = import_x(Nodes, Node, Label),
     Model#{nodes:=NewNodes, node_weights:=NW+1}.
 
 -spec import_edge(ligaModel(), medge(), label()) -> ligaModel().
 import_edge(#{edges:=Edges, edge_weights:=EW}=Model, Edge, Label) ->
-    NewEdges = case maps:get(Edge, Edges, x) of
-		   x ->
-		       maps:put(Edge, maps:put(Label, 1, #{}), Edges);
-		   LabelMap ->
-		       NewLabelMap = case maps:get(Label, LabelMap, x) of
-					 x ->
-					     maps:put(Label, 1, LabelMap);
-					 N ->
-					     maps:put(Label, N+1, LabelMap)
-				     end,
-		       maps:put(Edge, NewLabelMap, Edges)
-	       end,
+    NewEdges = import_x(Edges, Edge, Label),
     Model#{edges:=NewEdges, edge_weights:=EW+1}.
 
--spec classify(string()) -> liga_score().
-classify(String) ->
-    classify(ligaModel, String).
-
--spec classify(atom() | ligaModel(), string()) -> liga_score().
-classify(Model, String) ->
-    SG = make_sub_graph(Model, String),
-    score(SG).
-
--spec get_likely(liga_score()) -> list(label()).
-get_likely([]) -> [];
-get_likely(Ls) ->
-    Mean = lists:sum([Y || {_,Y} <- Ls])  /  length(Ls),
-    [L || {L,_} <- lists:filter(fun({_,N}) -> N >= Mean end, Ls)].
-
--spec update_model(string()) -> ok | {error, tuple()}.
-update_model(Filename) ->
-    update_model(erl, Filename).
-
--spec update_model(erl | beam, string()) -> ok | {error, tuple()}.
-update_model(erl, Filename) ->
-    try
-	{ok, M} = compile:file(Filename),
-	code:add_path("."),
-	update_model(beam, M),
-	ok
-    catch
-	E:R ->
-	    {error, {E,R}}
-    end;
-update_model(beam, M) ->
-    try
-	false = code:purge(M),
-	{module, M} = code:load_file(M),
-	ok
-    catch
-	E:R ->
-	    {error, {E,R}}
-    end.
-
-%%%% private
+-spec import_x(map(), mnode() | medge(), label()) -> map().
+import_x(Keys, Key, Val) ->
+    NewKeys = case maps:get(Key, Keys, x) of
+		   x ->
+		       maps:put(Key, maps:put(Val, 1, #{}), Keys);
+		   ValMap ->
+		       NewValMap = case maps:get(Val, ValMap, x) of
+					 x ->
+					     maps:put(Val, 1, ValMap);
+					 N ->
+					     maps:put(Val, N+1, ValMap)
+				     end,
+		       maps:put(Key, NewValMap, Keys)
+	       end,
+    NewKeys.
 
 -spec make_sub_graph(atom() | ligaModel(), string()) -> ligaModel().
 make_sub_graph(M, S) when is_atom(M) ->
     LG = M:model(),
     make_sub_graph(LG, S);
-
 make_sub_graph(#{nodes:=LNs, edges:=LEs}, S) ->
     Ts = string_to_trigrams(S),
     Ns = pull(Ts, LNs),
@@ -150,9 +112,6 @@ string_to_trigrams([C]) ->
     [{?POINT_START, C, ?POINT_END}];
 string_to_trigrams([X,Y|_] = S) ->
     [{?POINT_START, X, Y} | get_trigrams(S)].
-
-
-%%%% helpers
 
 -spec get_edges(list(mnode())) -> list(medge()).
 get_edges([_]) ->
@@ -171,6 +130,7 @@ get_weights(Xs) ->
     Ms = maps:values(Xs),
     lists:sum([lists:sum(maps:values(M)) || M <- Ms]).
 
+-spec get_labels(map()) -> list(label()).
 get_labels(Ns) ->
     maps:fold(fun(_N, Ls, Acc1) ->
 		      maps:fold(fun(L, _W, Acc2) ->

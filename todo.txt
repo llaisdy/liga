@@ -1,0 +1,31 @@
+* liga todo
+
+** dev tests
+
+*** get_likely
+- use? test? keep?
+
+*** dialyser
+- run on everything
+
+** performance tests
+- nb these are not "dev" tests
+
+*** tromp_test
+Get training and test data from the Tromp dataset; generate model; test model with test data
+
+Make sure liga performs similarly to the Tromp original
+
+*** regression_test
+test a model against test_data_erl
+
+Make sure performance has not deteriorated
+
+*** extra diff test
+Results without & with extra breadth weighting (what shall we call it?)
+
+Use Tromp dataset, and a dataset with lots of language-unique accentation
+
+
+
+
