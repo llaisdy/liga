@@ -6,7 +6,7 @@
 - use? test? keep?
 
 *** dialyser
-- run on everything
+- keep up to date
 
 ** performance tests
 - nb these are not "dev" tests
@@ -26,6 +26,12 @@ Results without & with extra breadth weighting (what shall we call it?)
 
 Use Tromp dataset, and a dataset with lots of language-unique accentation
 
+** documentation
 
+write it.
+
+** Chinese tests
+
+What is LIGA like with Chinese data: different dialects, different regions?
 
 

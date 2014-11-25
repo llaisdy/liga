@@ -1,6 +1,18 @@
 -module(liga_test_utils).
 -export([get_model_small/0]).
 
+-type ligaModel() :: #{labels => list(label()),
+		       node_weights => non_neg_integer(), 
+		       edge_weights => non_neg_integer(), 
+		       nodes => #{mnode() => map()}, 
+		       edges => #{medge() => map()}
+		      }.
+-type label() :: atom().
+-type mnode() :: {non_neg_integer(),non_neg_integer(),non_neg_integer()}.
+-type medge() :: {mnode(), mnode()}.
+
+
+-spec get_model_small() -> ligaModel().
 get_model_small() ->
     #{labels => [en, nl], 
       node_weights => 29, 

@@ -21,8 +21,8 @@
 -type score() :: float().
 -type label_score() :: {label(), score()}.
 -type liga_score()  :: list(label_score()). % sorted by score
--type mnode() :: any().
--type medge() :: {node(), node()}.
+-type mnode() :: {non_neg_integer(),non_neg_integer(),non_neg_integer()}.
+-type medge() :: {mnode(), mnode()}.
 -type trigram() :: {non_neg_integer(), non_neg_integer(), non_neg_integer()}.
 
 %%%% api
