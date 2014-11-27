@@ -1,10 +1,96 @@
 * dialyzer
 
+** 2
+
+Dear Dave
+
+Thanks for your help.  Here are some more details:
+
+
+*** OS: FreeBSD 10.0-RELEASE
+
+$ uname -a
+FreeBSD simba 10.0-RELEASE FreeBSD 10.0-RELEASE #0 r260789: Thu Jan 16 22:34:59 UTC 2014     root@snap.freebsd.org:/usr/obj/usr/src/sys/GENERIC  amd64
+
+Upgrading to 10.1 is on my todo list.
+
+
+*** Erlang version now 17.3_3,3
+
+$ pkg info erlang
+erlang-17.3_1,3
+...
+$ sudo pkg upgrade
+...
+
+$ pkg info erlang
+erlang-17.3_3,3
+...
+
+
+*** Errors persist
+
+Upgrading erlang has not changed behaviour.
+
+A couple more observations:
+
+1. Running dialyzer on the module dt below gets the error as noted previously.  However, if I uncomment the '%% ok' line, dialyzer will process the module with no problems.
+
+    -module(dt).
+    -export([get_map/0]).
+
+    -spec get_map() -> map().
+    get_map() ->
+        #{labels => [one, two], 
+          number => 27,
+%%          [1,2,3] => wer,        %% ok
+          kvok => #{
+         	a => qwe,
+         	2 => asd,
+                [1,2,3] => wer,  %% bad
+                {4,5,6} => sdf,  %% bad
+         	"abc" => zxc 
+           }
+         }.
+
+2. Running dialyzer on the module dt2 below raises the warning following.  Uncommenting the '%% ok' line has no effect.
+
+    -module(dt2).
+    -export([get_map/0]).
+
+    -spec get_map() -> map().
+    get_map() ->
+        X = #{labels => [one, two], 
+          number => 27,
+%%          [1,2,3] => wer,        %% ok
+          kvok => #{
+         	a => qwe,
+         	2 => asd,
+                [1,2,3] => wer,  %% bad
+                {4,5,6} => sdf,  %% bad
+         	"abc" => zxc 
+           }
+         },
+	X.
+
+    $ dialyzer dt2.erl 
+      Checking whether the PLT /home/ivan/.dialyzer_plt is up-to-date... yes
+      Proceeding with analysis...
+    dt2.erl:5: Function get_map/0 has no local return
+     done in 0m0.41s
+    done (warnings were emitted)
+
+
+
+
+
+** 1
+
 Dear All
 
 Running Dialyzer on the module below crashes Dialyzer with the error following:
 
-** module
+*** module
 
     -module(ltu).
     -export([get_map/0]).
@@ -24,7 +110,7 @@ Running Dialyzer on the module below crashes Dialyzer with the error following:
            }
          }.
 
-** crash
+*** crash
 
     $ dialyzer ltu.erl
       Checking whether the PLT /home/ivan/.dialyzer_plt is up-to-date... yes
