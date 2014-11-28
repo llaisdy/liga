@@ -49,11 +49,11 @@ classify(Model, String) ->
     SG = make_sub_graph(Model, String),
     score(SG).
 
--spec get_likely(liga_score()) -> list(label()).
+-spec get_likely(liga_score()) -> (liga_score()).
 get_likely([]) -> [];
 get_likely(Ls) ->
-    Mean = lists:sum([Y || {_,Y} <- Ls])  /  length(Ls),
-    [L || {L,_} <- lists:filter(fun({_,N}) -> N >= Mean end, Ls)].
+    Mean = lists:sum([N || {_,N} <- Ls])  /  length(Ls),
+    [L || L <- lists:filter(fun({_,N}) -> N >= Mean end, Ls)].
 
 %%%% private
 

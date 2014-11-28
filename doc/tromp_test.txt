@@ -1,0 +1,41 @@
+* Tromp experiment replication
+
+** Data
+
+six languages (de, en, es, fr, it, nl), six accounts per language (& "Assuming that each account represents a single domain, ...").  Some accounts have more utterances than others.
+
+
+** Tromp paper method
+
+For each setup, do fifty different ten-fold validation tests & take average.
+
+*** Four sample size setups: 5%, 10%, 25%, 50%
+
+- take random x% of each language as training data; take random ten from rest (all six languages) as test data
+
+*** Generalization/Specialization setup
+
+training data = 2/3 of all data of one single account for each language
+
+test data 1 (specialisation) = all rest of data from that account
+
+test data 2 (generalisation) = data from all other accounts
+- (how much? all?)
+
+*** Two Holdout setups: one holdout, two holdouts
+
+training data = data from all accounts except holdout account(s)
+- (how much? all?)
+
+test data = data from holdout account(s)
+- (how much? all?)
+
+
+** Results
+
+Show accuracy % mean & standard deviation
+
+nb not comparing with n-gram approach: comparing this erlang liga with Tromp results.
+
+Have all results (not just means) available for report (cf Tromp graphs).
+

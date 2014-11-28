@@ -4,6 +4,7 @@
 
 *** get_likely
 - use? test? keep?
+- leave for now
 
 *** dialyser
 - keep up to date
