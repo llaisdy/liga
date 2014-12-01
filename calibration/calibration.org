@@ -6,10 +6,20 @@ A replication of the calibration tests in [1].
 
 six languages (de, en, es, fr, it, nl), six accounts per language (& "Assuming that each account represents a single domain, ...").  Some accounts have more utterances than others.
 
+LIGA_Benelearn11_dataset.tar.gz
+
+
+
 
 ** Tromp paper method
 
 For each setup, do fifty different ten-fold validation tests & take average.
+
+#+BEGIN_SRC erlang
+
+... see calibration.erl
+
+#+END_SRC
 
 *** Four sample size setups: 5%, 10%, 25%, 50%
 
@@ -42,6 +52,7 @@ nb not comparing with n-gram approach: comparing this erlang liga with Tromp res
 Have all results (not just means) available for report (cf Tromp graphs).
 
 NB: do results without "original research" then with
+
 
 ** References
 
