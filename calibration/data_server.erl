@@ -98,7 +98,7 @@ handle_call({get_with_complement, Lab, NGet, NComp}, _From, State=#state{data=Da
     F = fun(D) ->
 		All = dict:fold(fun(_, V, A) -> V ++ A end, [], D),
 		Ngc = NGet + NComp,
-		{Sel,_} = lists:split(Ngc, [X||{_,X} <- lists:sort([{random:uniform(), N} || N <- All])]),
+		{Sel,_} = lists:split(Ngc, [X||{_,X} <- lists:sort([{random:uniform(), {Lab,N}} || N <- All])]),
 		lists:split(NGet, Sel)
 	end,
     E =  {[],[]},

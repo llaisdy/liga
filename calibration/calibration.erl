@@ -62,7 +62,7 @@ run(TrainingData, TestData) ->
     M = build_model(TrainingData),
     lists:map(fun({Lab, Str}) ->
 		      Res = liga:classify(M, Str),
-		      [correct(Res, Lab), Res]
+		      {correct(Res, Lab), Res}
 	      end,
 	      TestData).
 
