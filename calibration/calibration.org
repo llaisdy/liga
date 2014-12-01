@@ -1,4 +1,6 @@
-* Tromp experiment replication
+* LIGA Calibration
+
+A replication of the calibration tests in [1].
 
 ** Data
 
@@ -39,3 +41,8 @@ nb not comparing with n-gram approach: comparing this erlang liga with Tromp res
 
 Have all results (not just means) available for report (cf Tromp graphs).
 
+NB: do results without "original research" then with
+
+** References
+
+[1] Tromp, E. & Pechenizkiy, M., "Graph-Based N-gram Language Identification on Short Texts" 2011, http://www.win.tue.nl/~mpechen/publications/pubs/TrompPechenizkiy_LIGA_Benelearn11.pdf
