@@ -9,8 +9,6 @@ six languages (de, en, es, fr, it, nl), six accounts per language (& "Assuming t
 LIGA_Benelearn11_dataset.tar.gz
 
 
-
-
 ** Tromp paper method
 
 For each setup, do fifty different ten-fold validation tests & take average.
@@ -21,11 +19,11 @@ For each setup, do fifty different ten-fold validation tests & take average.
 
 #+END_SRC
 
-*** Four sample size setups: 5%, 10%, 25%, 50%
+*** DONE(?): Four sample size setups: 5%, 10%, 25%, 50%
 
 - take random x% of each language as training data; take random ten from rest (all six languages) as test data
 
-*** Generalization/Specialization setup
+*** DONE(?): Generalization/Specialization setup
 
 training data = 2/3 of all data of one single account for each language
 
@@ -34,7 +32,7 @@ test data 1 (specialisation) = all rest of data from that account
 test data 2 (generalisation) = data from all other accounts
 - (how much? all?)
 
-*** Two Holdout setups: one holdout, two holdouts
+*** *NEXT* Two Holdout setups: one holdout, two holdouts
 
 training data = data from all accounts except holdout account(s)
 - (how much? all?)
