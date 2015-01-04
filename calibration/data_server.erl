@@ -19,7 +19,8 @@
 	 terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(DATA_DIR, "LIGA_Benelearn11_dataset").
+%%-define(DATA_DIR, "LIGA_Benelearn11_dataset").
+-define(DATA_DIR, "LIGA_test_dataset").
 -define(LAB_DIRS, [
 		   {de, "de_DE"},
 		   {en, "en_UK"},
@@ -129,7 +130,8 @@ handle_call({get_with_complement, Lab, PCage, NComp}, _From, State=#state{data=D
 			  all -> Size;
 			  _   -> NGet + NComp
 		      end,
-		{Sel,_} = lists:split(Ngc, [X||{_,X} <- lists:sort([{random:uniform(), {Lab,N}} || N <- All])]),
+		DecL = lists:sort([{random:uniform(), {Lab,N}} || N <- All]),
+		{Sel,_} = lists:split(Ngc, [X||{_,X} <- DecL]),
 		lists:split(NGet, Sel)
 	end,
     E =  {[],[]},
@@ -148,7 +150,8 @@ handle_call({get_with_complement, Lab, Acc, PCage, NComp}, _From, State=#state{d
 			  all -> Size;
 			  _   -> NGet + NComp
 		      end,
-		{Sel,_} = lists:split(Ngc, [X||{_,X} <- lists:sort([{random:uniform(), {Lab,N}} || N <- All])]),
+		DecL = lists:sort([{random:uniform(), {Lab,N}} || N <- All]),
+		{Sel,_} = lists:split(Ngc, [X||{_,X} <- DecL]),
 		lists:split(NGet, Sel)
 	end,
     E =  {[],[]},
