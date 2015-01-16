@@ -1,10 +1,12 @@
 * liga todo
 
+- escripts for building model, updating etc <- good idea
+
 ** dev tests
 
 *** get_likely
 - use? test? keep?
-- leave for now
+- keep - and write up caveats
 
 *** dialyser
 - keep up to date
