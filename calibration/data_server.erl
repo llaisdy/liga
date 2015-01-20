@@ -12,7 +12,8 @@
 	 get_label_account/0,
 	 get_data/3,
 	 get_with_complement/3,
-	 get_with_complement/4
+	 get_with_complement/4,
+	 get_from_accs/3
 	]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -79,6 +80,13 @@ get_with_complement(Lab, Acc, PCage, NComp) ->
 get_data(Lab, Acc, N) ->
     gen_server:call(?SERVER, {get_data, Lab, Acc, N}).
 
+get_from_accs(Lab, Accs, NTests) ->
+    lists:foldl(fun(Ra, Ac) ->
+			get_data(Lab, Ra, NTests) ++ Ac
+		end,
+		[],
+		Accs).
+	
 %%%% gen_server callbacks
 
 init([]) ->

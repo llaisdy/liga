@@ -4,6 +4,10 @@ all:
 	erlc -o ebin src/liga_writer.erl
 	cp src/liga.app.src ebin/liga.app
 
+calibration: all
+	erlc -o ebin calibration/calibration.erl
+	erlc -o ebin calibration/data_server.erl
+
 clean:
 	rm -fr ebin
 

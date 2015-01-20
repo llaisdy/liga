@@ -1,5 +1,7 @@
 * LIGA Calibration
 
+- nb the calibration tests can take some time to run!
+
 A replication of the calibration tests in [1].
 
 ** Data
@@ -13,11 +15,7 @@ LIGA_Benelearn11_dataset.tar.gz
 
 For each setup, do fifty different ten-fold validation tests & take average.
 
-#+BEGIN_SRC erlang
-
-... see calibration.erl
-
-#+END_SRC
+see calibration.erl
 
 *** DONE(?): Four sample size setups: 5%, 10%, 25%, 50%
 

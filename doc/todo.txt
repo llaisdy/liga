@@ -1,5 +1,7 @@
 * liga todo
 
+- calibration: all requests to data_server shd have N to get as {Type, N} where Type is nm or pc.
+
 - escripts for building model, updating etc <- good idea
 
 ** dev tests
