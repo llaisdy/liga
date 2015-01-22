@@ -41,7 +41,7 @@ setup(sample_size, PCage, NTests) ->
     %% training data: random x% of each language
     %% test data: random NTests from rest
     F = fun(Lab) ->
-		data_server:get_with_complement(Lab, PCage, NTests)
+		data_server:get_with_complement(Lab, {pc,PCage}, NTests)
 	end,
     package_data({sample_size, PCage}, F);
 
@@ -51,7 +51,7 @@ setup(spec_gen, spec, NTests) ->
     %% test data 1 (specialisation) = all rest of data from that account
     F = fun(Lab) ->
 		Acc = data_server:get_account(Lab),
-		data_server:get_with_complement(Lab, Acc, 67, NTests)
+		data_server:get_with_complement(Lab, Acc, {pc,67}, NTests)
 	end,
     package_data(spec, F);
 
@@ -61,7 +61,7 @@ setup(spec_gen, gen, NTests) ->
     %% test data 2 (generalisation) = data from all other accounts
     F = fun(Lab) ->
 		[Acc | Rest] = data_server:shuffle_accounts(Lab),
-		TrainingData = data_server:get_data(Lab, Acc, 67),
+		TrainingData = data_server:get_with_complement(Lab, Acc, {pc,67}, 0),
 		TestData = data_server:get_from_accs(Lab, Rest, NTests),
 		{TrainingData, TestData}
 	end,
@@ -74,8 +74,8 @@ setup(holdouts, NHoldouts, NTests) ->
     F = fun(Lab) ->
 		{HOs, NHOs} = lists:split(NHoldouts,
 					  data_server:shuffle_accounts(Lab)),
-		TrainingData = data_server:get_from_accs(Lab, NHOs, ??),
-		TestData = data_server:get_from_accs(Lab, HOs, ??),
+		TrainingData = data_server:get_from_accs(Lab, NHOs, {pc, 67}),
+		TestData = data_server:get_from_accs(Lab, HOs, {nm, NTests}),
 		{TrainingData, TestData}
 	end,
     package_data({holdouts, NHoldouts}, F);

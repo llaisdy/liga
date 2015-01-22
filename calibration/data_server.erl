@@ -10,7 +10,6 @@
 	 get_accounts/1, shuffle_accounts/1,
 	 get_account/1,
 	 get_label_account/0,
-	 get_data/3,
 	 get_with_complement/3,
 	 get_with_complement/4,
 	 get_from_accs/3
@@ -69,7 +68,7 @@ get_label_account() ->
 -spec get_with_complement(atom(), pcage(), non_neg_integer() | all) 
 			 -> {[labelled_string()],[labelled_string()]}.
 get_with_complement(Lab, PCage, NComp) ->
-    gen_server:call(?SERVER, {get_with_complement, Lab, PCage, NComp}).
+    gen_server:call(?SERVER, {get_with_complement, Lab, all, PCage, NComp}).
 
 -type pcage() :: non_neg_integer().
 -spec get_with_complement(atom(), any(), pcage(), non_neg_integer() | all) 
@@ -77,12 +76,10 @@ get_with_complement(Lab, PCage, NComp) ->
 get_with_complement(Lab, Acc, PCage, NComp) ->
     gen_server:call(?SERVER, {get_with_complement, Lab, Acc, PCage, NComp}).
 
-get_data(Lab, Acc, N) ->
-    gen_server:call(?SERVER, {get_data, Lab, Acc, N}).
-
 get_from_accs(Lab, Accs, NTests) ->
     lists:foldl(fun(Ra, Ac) ->
-			get_data(Lab, Ra, NTests) ++ Ac
+			{X,_} = get_with_complement(Lab, Ra, {nm, NTests}, 0),
+			X ++ Ac
 		end,
 		[],
 		Accs).
@@ -129,11 +126,13 @@ handle_call({size, Lab, Acc}, _From, State=#state{data=Data}) ->
     Reply = do_if_valid_key(Lab, Data, F, E),
     {reply, Reply, State};
 
-handle_call({get_with_complement, Lab, PCage, NComp}, _From, State=#state{data=Data}) ->
+%% {pc, PCage}
+%% {nm, N}
+handle_call({get_with_complement, Lab, Acc, NPC, NComp}, _From, State=#state{data=Data}) ->
     F = fun(D) ->
-		All = dict:fold(fun(_, V, A) -> V ++ A end, [], D),
+		All = get_all_or_empty(D, Acc),
 		Size = length(All),
-		NGet = Size * PCage div 100,
+		NGet = valid_nget(NPC, Size),
 		Ngc = case NComp of 
 			  all -> Size;
 			  _   -> NGet + NComp
@@ -141,44 +140,6 @@ handle_call({get_with_complement, Lab, PCage, NComp}, _From, State=#state{data=D
 		DecL = lists:sort([{random:uniform(), {Lab,N}} || N <- All]),
 		{Sel,_} = lists:split(Ngc, [X||{_,X} <- DecL]),
 		lists:split(NGet, Sel)
-	end,
-    E =  {[],[]},
-    Reply = do_if_valid_key(Lab, Data, F, E),
-    {reply, Reply, State};
-
-handle_call({get_with_complement, Lab, Acc, PCage, NComp}, _From, State=#state{data=Data}) ->
-    F = fun(D) ->
-		All = case dict:find(Acc, D) of
-			  error -> [];
-			  {ok, AL} -> AL
-		      end,
-		Size = length(All),
-		NGet = Size * PCage div 100,
-		Ngc = case NComp of 
-			  all -> Size;
-			  _   -> NGet + NComp
-		      end,
-		DecL = lists:sort([{random:uniform(), {Lab,N}} || N <- All]),
-		{Sel,_} = lists:split(Ngc, [X||{_,X} <- DecL]),
-		lists:split(NGet, Sel)
-	end,
-    E =  {[],[]},
-    Reply = do_if_valid_key(Lab, Data, F, E),
-    {reply, Reply, State};
-
-handle_call({get_data, Lab, Acc, NGet}, _From, State=#state{data=Data}) ->
-    F = fun(D) ->
-		All = case dict:find(Acc, D) of
-			  error -> [];
-			  {ok, AL} -> AL
-		      end,
-		Size = length(All),
-		Ng = case NGet > Size of
-			 true -> Size;
-			 false -> NGet
-		     end,
-		{Sel,_} = lists:split(Ng, [X||{_,X} <- lists:sort([{random:uniform(), {Lab,N}} || N <- All])]),
-		Sel
 	end,
     E =  {[],[]},
     Reply = do_if_valid_key(Lab, Data, F, E),
@@ -214,6 +175,15 @@ do_if_valid_key(Lab, Data, F, Else) ->
 	{ok, LD} -> F(LD)
     end.
 
+get_all_or_empty(D, all) ->
+    dict:fold(fun(_, V, A) -> V ++ A end, [], D);
+get_all_or_empty(D, Acc) ->
+    case dict:find(Acc, D) of
+	error ->
+	    [];
+	{ok, AL} -> AL
+    end.
+
 get_size(D) ->
     dict:fold(fun(_, V, A) -> 
 		      A + length(V)
@@ -233,3 +203,9 @@ import_data(Dir) ->
 
 shuffle(L) ->
     [X||{_,X} <- lists:sort([{random:uniform(), N} || N <- L])].
+
+valid_nget({nm, N}, Size) ->
+    lists:min([N, Size]);
+valid_nget({pc, P}, Size) ->
+    Size * P div 100.
+				 
