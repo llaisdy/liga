@@ -11,30 +11,25 @@ Six languages (de, en, es, fr, it, nl), with six accounts per language (& "Assum
 The data set used in [1] is available from the project webpage [2], direct link [3].
 
 
-** Tromp paper method
+** Method
 
 For each setup, do fifty different ten-fold validation tests & take average.
 
 *** Four sample size setups: 5%, 10%, 25%, 50%
 
-- take random x% of each language as training data; take random ten from rest (all six languages) as test data
+- training data: x% of each language
+- test data: ten from rest (all languages)
 
 *** Generalization/Specialization setup
 
-training data = 2/3 of all data of one single account for each language
-
-test data 1 (specialisation) = all rest of data from that account
-
-test data 2 (generalisation) = data from all other accounts
-- (how much? not specified)
+- training data: 2/3 of all data of one single account for each language
+- test data 1 (specialisation): all rest of data from that account
+- test data 2 (generalisation): data from all other accounts (how much? not specified)
 
 *** Two Holdout setups: one holdout, two holdouts
 
-training data = data from all accounts except holdout account(s)
-- (how much? not specified)
-
-test data = data from holdout account(s)
-- (how much? not specified)
+- training data: data from all accounts except holdout account(s) (how much? not specified)
+- test data: data from holdout account(s) (how much? not specified)
 
 
 ** Results
@@ -43,7 +38,7 @@ Show accuracy rate (%) mean & standard deviation
 
 Have all results (not just means) available for report (cf Tromp graphs).
 
-n.b.: do results without "Ivan's original research" then with
+n.b.: do results without Ivan's Original Research then with
 
 
 ** References

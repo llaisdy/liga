@@ -2,11 +2,11 @@
 
 This is an implementation of the LIGA algorithm for language identification [1] ,[2].
 
-n.b.: at time of writing (January 2015), there is no other open-source implementation of this algorithm.
+n.b.: As far as I know, at time of writing (January 2015), there is no other open-source implementation of this algorithm.
 
 ** Building
 
-Use make.  `make test` will build the unit tests in test/; `make calibration` will build the calibration modules in calibration/ (n.b., the default make (all) does not build these two directories).
+Use make.  `make test` will build the unit tests in test/; `make calibration` will build the calibration modules in calibration/.  n.b., the default `make (all)` does not build from these two directories.
 
 ** Usage
 
@@ -39,7 +39,7 @@ Result = liga:classify(M, "is dit ook een test").
 
 Here, M could be either a LIGA model data structure, or an atom representing a LIGA model module.  Result is a list of labels (i.e., languages) the model knows about, each with a score.  The list is sorted by score, so the "favourite" language is always the first element.
 
-n.b. it is possible for liga:classify to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
+n.b. it is possible for liga:classify/2 to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
 
 #+BEGIN_SRC erlang
 Result = liga:classify(M, "和而不同").
@@ -49,13 +49,13 @@ Result = liga:classify(M, "和而不同").
 
 ** Calibration
 
-As well as units tests in test/, a replication of the calibration in [2] is descibed in calibration/calibration.org. 
+As well as unit tests in test/, a replication of the calibration in [2] is described in calibration/calibration.org. 
 
 ** TODO
 
 - write up calibration tests & compare with [2]
 - document liga:get_likely/1
-- document Ivan's original research in liga:score_acc/3
+- document Ivan's Original Research in liga:score_acc/3
 - test with languages/dialects that use Hanzi
 - test with languages/dialects that use Arabic alphabet
 - implement in C
