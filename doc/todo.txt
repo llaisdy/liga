@@ -1,6 +1,9 @@
 * liga todo
 
-- calibration: all requests to data_server shd have N to get as {Type, N} where Type is nm or pc.
+- calibration
+  - works but is *slow*
+  - output score not results 
+    - Show accuracy % mean & standard deviation
 
 - escripts for building model, updating etc <- good idea
 

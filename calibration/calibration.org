@@ -30,7 +30,7 @@ test data 1 (specialisation) = all rest of data from that account
 test data 2 (generalisation) = data from all other accounts
 - (how much? all?)
 
-*** *NEXT* Two Holdout setups: one holdout, two holdouts
+*** DONE(?): Two Holdout setups: one holdout, two holdouts
 
 training data = data from all accounts except holdout account(s)
 - (how much? all?)

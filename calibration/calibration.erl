@@ -61,7 +61,7 @@ setup(spec_gen, gen, NTests) ->
     %% test data 2 (generalisation) = data from all other accounts
     F = fun(Lab) ->
 		[Acc | Rest] = data_server:shuffle_accounts(Lab),
-		TrainingData = data_server:get_with_complement(Lab, Acc, {pc,67}, 0),
+		{TrainingData,_} = data_server:get_with_complement(Lab, Acc, {pc,67}, 0),
 		TestData = data_server:get_from_accs(Lab, Rest, NTests),
 		{TrainingData, TestData}
 	end,
