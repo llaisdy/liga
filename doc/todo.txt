@@ -2,8 +2,8 @@
 
 - calibration
   - works but is *slow*
-  - output score not results 
-    - Show accuracy % mean & standard deviation
+
+- remove my extra bit?  For now?
 
 - escripts for building model, updating etc <- good idea
 

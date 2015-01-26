@@ -30,9 +30,22 @@ do_trials(N, NTestsPerTrial, Type, Set) ->
     [do_tests(Type, Set, NTestsPerTrial) |
      do_trials(N - 1, NTestsPerTrial, Type, Set)].
 
+-spec score_trials(list()) -> {float(), float()}.
+score_trials(TRs) ->
+    TSs = lists:map(fun score_frame/1, TRs),
+    Vs = [T/(T+F) || {T,F} <- TSs],
+    mean_std_dev(Vs).
+
+mean_std_dev(Vs) ->
+    L = length(Vs),
+    M = lists:sum(Vs) / L,
+    X = lists:sum([(V-M)*(V-M) || V <- Vs]) / L,
+    S = math:sqrt(X),
+    {M,S}.
+
 do_tests(Type, Set, N) ->
-    Frames = setup(Type, Set, N),
-    run_frames(Frames).
+    Frame = setup(Type, Set, N),
+    run_frame(Frame).
 
 -spec setup(atom(), atom(), non_neg_integer()) ->
 		   {[labelled_string()], [labelled_string()]}.
@@ -77,23 +90,27 @@ setup(holdouts, NHoldouts, NTests) ->
 		TrainingData = data_server:get_from_accs(Lab, NHOs, {pc, 67}),
 		TestData = data_server:get_from_accs(Lab, HOs, {nm, NTests}),
 		{TrainingData, TestData}
-	end,
+	 end,
     package_data({holdouts, NHoldouts}, F);
 
 setup(Type, Set, _) ->
     {e_not_implemented, Type, Set}.
 
-run_frames([]) -> [];
-run_frames([H|T]) -> 
-    [run_one(H) | run_frames(T)].
+score_frame({_,FRs}) ->
+    lists:foldl(fun({true,_,_}, {T, F}) ->
+			{T+1, F};
+		   ({false,_,_}, {T, F}) ->
+			{T, F+1}
+		end,
+		{0,0},
+		FRs).
 
--spec run_one({tuple(), {[labelled_string()], [labelled_string()]}}) -> any().
-run_one({TestLabel, {TrainingData, TestData}}) ->
+-spec run_frame({tuple(), {[labelled_string()], [labelled_string()]}}) -> any().
+run_frame({TestLabel, {TrainingData, TestData}}) ->
     M = build_model(TrainingData),
     R = lists:map(fun({Lab, Str}) ->
 			  Res = liga:classify(M, Str),
-			  {Lab, Res}
-			  %% {correct(Res, Lab), Res}
+			  {correct(Lab, Res), Lab, Res}
 		  end,
 		  TestData),
     {TestLabel, R}.
@@ -105,7 +122,7 @@ build_model(Ls) ->
 		liga:new(),
 		Ls).
 
-correct([{L,_}|_],L) ->
+correct(L, [{L,_}|_]) ->
     true;
 correct(_,_) ->
     false.
@@ -116,7 +133,7 @@ package_data(TestLabel, F) ->
 			   F(Lab)
 		   end,
 		   Labs),
-    [{TestLabel, split_data(Xs)}].
+    {TestLabel, split_data(Xs)}.
 
 split_data(Xs) ->
     lists:foldl(fun({A, B}, {C, D}) ->
