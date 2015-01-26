@@ -1,22 +1,73 @@
 * Language Identification: a Graph-based Approach
 
-This is an implementation of the LIGA algorithm for language identification [1,2].
+This is an implementation of the LIGA algorithm for language identification [1] ,[2].
 
-n.b.: at time of writing (August 2014), there is no other open-source implementation of this algorithm.
+n.b.: at time of writing (January 2015), there is no other open-source implementation of this algorithm.
+
+** Building
+
+Use make.  `make test` will build the unit tests in test/; `make calibration` will build the calibration modules in calibration/ (n.b., the default make (all) does not build these two directories).
 
 ** Usage
 
-The modules in scripts/ and test/ give examples of usage.
+The modules in test/ give examples of usage.  For example, liga_tests:build_model_small/0 shows building a very small model trained on two labelled strings.
+
+Basically, you create a new model:
+
+#+BEGIN_SRC erlang
+M = liga:new().
+#+END_SRC
+
+Then you add labelled strings to it:
+
+#+BEGIN_SRC erlang
+M1 = liga:import_string(M, "this is a test", en).
+#+END_SRC
+
+Once you've imported your training data, you can write the model to a file.  The following saves the model (along with some metadata) to my_new_liga_model.erl:
+
+#+BEGIN_SRC erlang
+ok = liga_writer:write_model(M, my_new_liga_model).
+#+END_SRC
+
+The main use of a LIGA model is to classify a string (i.e. identify the language):
+
+#+BEGIN_SRC erlang
+Result = liga:classify(M, "is dit ook een test").
+[{nl,0.5744047619047619}, {en,0.14583333333333331}]
+#+END_SRC
+
+Here, M could be either a LIGA model data structure, or an atom representing a LIGA model module.  Result is a list of labels (i.e., languages) the model knows about, each with a score.  The list is sorted by score, so the "favourite" language is always the first element.
+
+n.b. it is possible for liga:classify to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
+
+#+BEGIN_SRC erlang
+Result = liga:classify(M, "你好吗").
+[]
+#+END_SRC
+
 
 ** Calibration
 
 As well as units tests in test/, a replication of the calibration in [2] is descibed in calibration/calibration.org. 
 
+** TODO
+
+- write up calibration tests & compare with [2]
+- document liga:get_likely/1
+- document Ivan's original research in liga:score_acc/3
+- test with languages/dialects that use Hanzi
+- test with languages/dialects that use Arabic alphabet
+- implement in C
+- consider implementing [3]
+
+
 ** References
 
-[1] "Mining Social Media", http://www.win.tue.nl/~mpechen/projects/smm/
+[1] "Mining Social Media", 2011, http://www.win.tue.nl/~mpechen/projects/smm/
 
-[2] Tromp, E. & Pechenizkiy, M., "Graph-Based N-gram Language Identification on Short Texts" 2011, http://www.win.tue.nl/~mpechen/publications/pubs/TrompPechenizkiy_LIGA_Benelearn11.pdf
+[2] Tromp, E. & Pechenizkiy, M., 2011, "Graph-Based N-gram Language Identification on Short Texts", http://www.win.tue.nl/~mpechen/publications/pubs/TrompPechenizkiy_LIGA_Benelearn11.pdf
 
-[999] Vogel, J. & Tresner-Kirsch, D., "Robust Language Identification in Short, Noisy Texts: Improvements to LIGA", 2012, https://www.mitre.org/sites/default/files/pdf/12_2971.pdf
+[3] Vogel, J. & Tresner-Kirsch, D., 2012, "Robust Language Identification in Short, Noisy Texts: Improvements to LIGA", https://www.mitre.org/sites/default/files/pdf/12_2971.pdf
+
 
