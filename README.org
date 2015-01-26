@@ -42,7 +42,7 @@ Here, M could be either a LIGA model data structure, or an atom representing a L
 n.b. it is possible for liga:classify to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
 
 #+BEGIN_SRC erlang
-Result = liga:classify(M, "你好吗").
+Result = liga:classify(M, "和而不同").
 []
 #+END_SRC
 
