@@ -1,0 +1,52 @@
+* LIGA Calibration
+
+n.b. the calibration tests can take some time to run!
+
+A replication of the calibration tests in [1].
+
+** Data
+
+Six languages (de, en, es, fr, it, nl), with six accounts per language (& "Assuming that each account represents a single domain, ...").  Some accounts have more utterances than others.
+
+The data set used in [1] is available from the project webpage [2], direct link [3].
+
+
+** Method
+
+For each setup, do fifty different ten-fold validation tests & take average.
+
+*** Four sample size setups: 5%, 10%, 25%, 50%
+
+- training data: x% of each language
+- test data: ten from rest (all languages)
+
+*** Generalization/Specialization setup
+
+- training data: 2/3 of all data of one single account for each language
+- test data 1 (specialisation): all rest of data from that account
+- test data 2 (generalisation): data from all other accounts (how much? not specified)
+
+*** Two Holdout setups: one holdout, two holdouts
+
+- training data: data from all accounts except holdout account(s) (how much? not specified)
+- test data: data from holdout account(s) (how much? not specified)
+
+
+** Results
+
+Show accuracy rate (%) mean & standard deviation
+
+Have all results (not just means) available for report (cf Tromp graphs).
+
+n.b.: do results without Ivan's Original Research then with
+
+
+** References
+
+[1] Tromp, E. & Pechenizkiy, M., 2011, "Graph-Based N-gram Language Identification on Short Texts", http://www.win.tue.nl/~mpechen/publications/pubs/TrompPechenizkiy_LIGA_Benelearn11.pdf
+
+[2] "Mining Social Media", 2011, http://www.win.tue.nl/~mpechen/projects/smm/
+
+[3] http://www.win.tue.nl/~mpechen/projects/smm/LIGA_Benelearn11_dataset.zip
+
+
