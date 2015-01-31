@@ -58,7 +58,7 @@ As well as unit tests in test/, a replication of the calibration in [2] is descr
 - document Ivan's Original Research in liga:score_acc/3
 - test with languages/dialects that use Hanzi
 - test with languages/dialects that use Arabic alphabet
-- implement in C
+- implement in some other languages: e.g., Prolog, ML, C
 - consider implementing [3]
 
 
