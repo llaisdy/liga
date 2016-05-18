@@ -1,6 +1,14 @@
 %%-*- mode: erlang -*-
 
 {application, liga,
- [{description,"Language Identification: a Graph-based Approach"},
-  {vsn,"1.0.0"}
+ [{description,"Language Identification: a Graph-based Approach"}
+ ,{vsn,"2.0.0"}
+ ,{modules, []}
+ ,{registered, []}
+ ,{applications, 
+   [kernel
+   ,stdlib
+   ]}
+ ,{env, [
+	]}
  ]}.

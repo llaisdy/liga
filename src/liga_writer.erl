@@ -23,8 +23,8 @@ read_model(erl, Filename) ->
 	read_model(beam, M),
 	ok
     catch
-	E:R ->
-	    {error, {E,R}}
+    	E:R ->
+    	    {error, {E,R}}
     end;
 read_model(beam, M) ->
     try

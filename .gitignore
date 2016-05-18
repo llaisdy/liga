@@ -1,8 +1,11 @@
-.eunit
-deps
-ebin
-*~
-*.o
 *.beam
+*.o
 *.plt
+*~
+.eunit
+_rel
+deps
+doc/ext/
+ebin
 erl_crash.dump
+test/*_data/

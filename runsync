@@ -1,0 +1,2 @@
+erl  -config config/dev -pa `pwd`/ebin -s sync go
+

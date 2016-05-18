@@ -6,61 +6,88 @@ n.b.: As far as I know, at time of writing (January 2015), there is no other ope
 
 ** Building
 
-Use make.  `make test` will build the unit tests in test/; `make calibration` will build the calibration modules in calibration/.  n.b., the default `make (all)` does not build from these two directories.
+Liga uses erlang.mk, so just "make".  There are no dependencies.  The test/ directory has some eunit and common test suites.
 
 ** Usage
 
-The modules in test/ give examples of usage.  For example, liga_tests:build_model_small/0 shows building a very small model trained on two labelled strings.
+The basic idea is that you train a model with a set of labelled strings, and save the model.  Then you can clasify strings against this model.
 
-Basically, you create a new model:
+The modules in test/ give examples of usage.
 
-#+BEGIN_SRC erlang
-M = liga:new().
-#+END_SRC
-
-Then you add labelled strings to it:
+It is possible to create a new, empty, model and add labelled strings to it:
 
 #+BEGIN_SRC erlang
-M1 = liga:import_string(M, "this is a test", en).
+    Data = [{en, "is this a test"},
+	    {nl, "is dit een test"}],
+    Model = lists:foldl(fun({Lab, Str}, Acc) ->
+				liga_model:import_string(Acc, Str, Lab)
+			end, 
+			liga_model:new(), 
+			Data).
 #+END_SRC
+
+For a dataset of any size however, this could take a while.  The liga_train module provides a build_model/{1,2} function.  This takes a data dictionary and an optional NumberOfRegions parameter:
+
+#+BEGIN_SRC erlang
+    Data = dict:from_list([{en, ["is this a test", 
+                                 "the cat sat on the mat"]},
+	                   {nl, ["is dit een test",
+                                 "Hier is nog een Nederlandse zin."]}]),
+    Model = liga_train:build_model(Data, 27).
+#+END_SRC
+
+liga_train parallelises model building in two ways:
+
+- A process is created for each label (en, nl, etc.), for each string, for each trigram list and for each trigram edge list.  So for the above example 14 processes would be created.  The leaf processes here (i.e. the trigram and trigram edge list processes) broadcast data to region processes.
+
+- In the above example 54 (i.e. 27*2) region processes are created (one set of region process for trigrams and one for trigram edges).  When all the work is finished a central process compiles the regions into a single liga model.
+
+A trigram is sent to a region based on its co-ordinates (mutatis mutandum for edges):
+
+#+BEGIN_SRC erlang
+    {X, Y, Z} = Trigram = {123, 234, 345}.
+    Region = lists:sum([X, Y, Z]) rem NumberOfRegions.
+#+END_SRC
+
+The point of all this parallelising is to enable a lot of data to be processed and merged fairly promptly.
 
 Once you've imported your training data, you can write the model to a file.  The following saves the model (along with some metadata) to my_new_liga_model.erl:
 
 #+BEGIN_SRC erlang
-ok = liga_writer:write_model(M, my_new_liga_model).
+    ok = liga_writer:write_model(M, my_new_liga_model).
 #+END_SRC
 
-The main use of a LIGA model is to classify a string (i.e. identify the language):
+The main use of a liga model is to classify a string (i.e. identify the language):
 
 #+BEGIN_SRC erlang
-Result = liga:classify(M, "is dit ook een test").
-[{nl,0.5744047619047619}, {en,0.14583333333333331}]
+    Result = liga:classify(M, "is dit ook een test").
+    [{nl,0.5744047619047619}, {en,0.14583333333333331}]
 #+END_SRC
 
-Here, M could be either a LIGA model data structure, or an atom representing a LIGA model module.  Result is a list of labels (i.e., languages) the model knows about, each with a score.  The list is sorted by score, so the "favourite" language is always the first element.
+Here, M could be either a liga model data structure, or an atom representing a liga model module.  Result is a list of labels (i.e., languages) the model knows about, each with a score.  The list is sorted by score, so the "favourite" language is always the first element.
+
+The score is a floating-point number between 0.0 and 1.0.
 
 n.b. it is possible for liga:classify/2 to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
 
 #+BEGIN_SRC erlang
-Result = liga:classify(M, "和而不同").
-[]
+    Result = liga:classify(M, "和而不同").
+    []
 #+END_SRC
-
 
 ** Calibration
 
-As well as unit tests in test/, a replication of the calibration in [2] is described in calibration/calibration.org. 
+As well as the common_test suite test/calibration_SUITE.erl, a replication of the calibration in [2] is described in calibration/calibration.org. 
 
-** TODO
+** todo
 
 - write up calibration tests & compare with [2]
-- document liga:get_likely/1
-- document Ivan's Original Research in liga:score_acc/3
-- test with languages/dialects that use Hanzi
+- document liga_util:get_likely/1
+- document Ivan's Original Research in liga_labmap:score/3
 - test with languages/dialects that use Arabic alphabet
-- implement in some other languages: e.g., Prolog, ML, C
+- test with languages/dialects that use Hanzi
+- implement in some other languages: e.g., ML, C
 - consider implementing [3]
-
 
 ** References
 

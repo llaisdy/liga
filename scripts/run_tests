@@ -1,2 +1,0 @@
-erl -pa ebin/ noshell -eval "eunit:test(liga), eunit:test(liga_writer)" -s init stop
-
