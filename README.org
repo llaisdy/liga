@@ -1,6 +1,6 @@
 * Language Identification: a Graph-based Approach
 
-This is an implementation of the LIGA algorithm for language identification [1] ,[2].
+This is an implementation of the LIGA algorithm for language identification [1] ,[2].  Erik Tromp's original implementation (Java and php; license not specified) is also on github [4].
 
 n.b.: As far as I know, at time of writing (January 2015), there is no other open-source implementation of this algorithm.
 
@@ -97,4 +97,4 @@ As well as the common_test suite test/calibration_SUITE.erl, a replication of th
 
 [3] Vogel, J. & Tresner-Kirsch, D., 2012, "Robust Language Identification in Short, Noisy Texts: Improvements to LIGA", https://www.mitre.org/sites/default/files/pdf/12_2971.pdf
 
-
+[4] https://github.com/ErikTromp/LIGA 
