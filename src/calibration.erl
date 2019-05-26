@@ -9,6 +9,11 @@
 	,run_frame/1
 	]).
 
+-ifdef(TEST).
+%% Make private functions accessible to common_test.
+-compile([export_all]).
+-endif.
+
 
 calibrate() ->
     %% For each setup, do fifty different ten-fold validation tests & take average.
@@ -86,7 +91,12 @@ setup(holdouts, NHoldouts, NTests) ->
 setup(Type, Set, _) ->
     {e_not_implemented, Type, Set}.
 
--spec run_frame({tuple(), {[labelled_string()], [labelled_string()]}}) -> any().
+-spec run_frame({tuple(), {[labelled_string()], [labelled_string()]}}) ->
+		       {ok,any()} | {error, atom()}.
+run_frame({_,{_,[]}}) ->
+    {error, no_test_data};
+run_frame({_,{[],_}}) ->
+    {error, no_training_data};
 run_frame({TestLabel, {TrainingData, TestData}}) ->
     LabDict = dataset_to_labdict(TrainingData),
     M = liga_train:build_model(LabDict),
@@ -95,7 +105,7 @@ run_frame({TestLabel, {TrainingData, TestData}}) ->
 		  end,
 		  TestData),
     PC = util:pc_correct(Results),
-    {TestLabel, PC}.
+    {ok, {TestLabel, PC}}.
 
 
 %%%% private
@@ -128,9 +138,21 @@ package_data(TestLabel, F) ->
     {TestLabel, split_data(Xs)}.
 
 split_data(Xs) ->
-    lists:foldl(fun({A, B}, {C, D}) ->
-			{A++C, B++D}
-		end,
-		{[],[]},
-		Xs).
+    lists:foldl(fun({A, B}, {C, D}) -> {A++C, B++D} end, {[],[]}, Xs).
 
+%%%% EUnit tests for unexported functions
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+basic_test_() ->
+    ?_test(?assert(1 + 2 =:= 3)).
+
+split_data_test_() ->
+    Input  = [{"qw","12"},{"as","34"},{"zx","56"}],
+    Output = {"zxasqw","563412"},
+    ?_test(
+       Output = split_data(Input)
+      ).
+
+-endif.

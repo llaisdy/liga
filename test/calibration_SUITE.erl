@@ -27,9 +27,9 @@ all() ->
 
 init_per_suite(Config) ->
     DataSet = liga,
-    DataDir = ?config(data_dir, Config) ++ "/LIGA_test_dataset",
-    {ok, _Pid} = data_server:start(DataSet, DataDir),
-    [{data_set, DataSet} | Config].
+    DataDir = ?config(data_dir, Config) ++ "LIGA_test_dataset",
+    {ok, Pid} = data_server:start(DataSet, DataDir),
+    [{data_set, DataSet}, {data_server, Pid} | Config].
 
 end_per_suite(_Config) ->
     stopped = data_server:stop(),
@@ -48,10 +48,13 @@ sample_size(_Config) ->
     %% for each language:
     %% training data: random % of each language
     %% test data: random NTests from rest
-    TrainPC = 10,
+    TrainPCs = [5,10,25,50],
     NTests = 100,
-    TestFrame = calibration:setup(sample_size, TrainPC, NTests),
-    run_report(TestFrame),
+    lists:foreach(
+      fun(TrPC) ->
+	      TestFrame = calibration:setup(sample_size, TrPC, NTests),
+	      run_report(TestFrame)
+      end, TrainPCs),
     ok.
 
 specialisation(_Config) ->
@@ -62,16 +65,19 @@ specialisation(_Config) ->
     TestFrame = calibration:setup(spec_gen, spec, NTests),
     run_report(TestFrame),
     ok.
-    
+
 generalisation(_Config) ->
     %% for each language:
     %% training data = 2/3 of all data of one single account
     %% test data = data from all other accounts
     NTests = 10,
     TestFrame = calibration:setup(spec_gen, gen, NTests),
+    {_TestLabel, {TrainingData, TestData}} = TestFrame,
+    ?assert(length(TrainingData) > 0),
+    ?assert(length(TestData) > 0),
     run_report(TestFrame),
     ok.
-    
+
 holdouts(_Config) ->
     %% for each language:
     %% training data = 2/3 of data from all accounts except holdout account(s)
@@ -79,14 +85,15 @@ holdouts(_Config) ->
     NTests = 10,
     NHoldouts = 1,
     TestFrame = calibration:setup(holdouts, NHoldouts, NTests),
+    {_TestLabel, {TrainingData, TestData}} = TestFrame,
+    ?assert(length(TrainingData) > 0),
+    ?assert(length(TestData) > 0),
     run_report(TestFrame),
     ok.
-    
-
 
 %%%% private
 
 run_report(TestFrame) ->
-    R = calibration:run_frame(TestFrame),
-    ct:pal("Result: ~p~n",[R]).
+    {ok, {Label, PcCorrect}} = calibration:run_frame(TestFrame),
+    ct:pal("~p: correct: ~.3f%",[Label, PcCorrect]).
 

@@ -1,29 +1,29 @@
 * Language Identification: a Graph-based Approach
 
-This is an implementation of the LIGA algorithm for language identification [1] ,[2].  Erik Tromp's original implementation (Java and php; license not specified) is also on github [4].
+This is an implementation of the LIGA algorithm for language identification [1] ,[2].
 
 n.b.: As far as I know, at time of writing (January 2015), there is no other open-source implementation of this algorithm.
 
 ** Building
 
-Liga uses erlang.mk, so just "make".  There are no dependencies.  The test/ directory has some eunit and common test suites.
+Liga uses erlang.mk, so just ~make~.  There are no dependencies.  The ~test/~ directory has some eunit and common test suites, which can be run with ~make eunit~ and ~make ct~.  All tests should pass.
 
 ** Usage
 
-The basic idea is that you train a model with a set of labelled strings, and save the model.  Then you can clasify strings against this model.
+The basic idea is that you train a model with a set of labelled strings, and save the model.  Then you can classify strings against this model.
 
-The modules in test/ give examples of usage.
+The modules in ~test/~ give examples of usage.
 
 It is possible to create a new, empty, model and add labelled strings to it:
 
 #+BEGIN_SRC erlang
     Data = [{en, "is this a test"},
-	    {nl, "is dit een test"}],
+            {nl, "is dit een test"}],
     Model = lists:foldl(fun({Lab, Str}, Acc) ->
-				liga_model:import_string(Acc, Str, Lab)
-			end, 
-			liga_model:new(), 
-			Data).
+                                liga_model:import_string(Acc, Str, Lab)
+                        end, 
+                        liga_model:new(), 
+                        Data).
 #+END_SRC
 
 For a dataset of any size however, this could take a while.  The liga_train module provides a build_model/{1,2} function.  This takes a data dictionary and an optional NumberOfRegions parameter:
@@ -31,12 +31,12 @@ For a dataset of any size however, this could take a while.  The liga_train modu
 #+BEGIN_SRC erlang
     Data = dict:from_list([{en, ["is this a test", 
                                  "the cat sat on the mat"]},
-	                   {nl, ["is dit een test",
+                           {nl, ["is dit een test",
                                  "Hier is nog een Nederlandse zin."]}]),
     Model = liga_train:build_model(Data, 27).
 #+END_SRC
 
-liga_train parallelises model building in two ways:
+~liga_train~ parallelises model building in two ways:
 
 - A process is created for each label (en, nl, etc.), for each string, for each trigram list and for each trigram edge list.  So for the above example 14 processes would be created.  The leaf processes here (i.e. the trigram and trigram edge list processes) broadcast data to region processes.
 
@@ -51,7 +51,7 @@ A trigram is sent to a region based on its co-ordinates (mutatis mutandum for ed
 
 The point of all this parallelising is to enable a lot of data to be processed and merged fairly promptly.
 
-Once you've imported your training data, you can write the model to a file.  The following saves the model (along with some metadata) to my_new_liga_model.erl:
+Once you've imported your training data, you can write the model to a file.  The following saves the model (along with some metadata) to ~my_new_liga_model.erl~:
 
 #+BEGIN_SRC erlang
     ok = liga_writer:write_model(M, my_new_liga_model).
@@ -68,7 +68,7 @@ Here, M could be either a liga model data structure, or an atom representing a l
 
 The score is a floating-point number between 0.0 and 1.0.
 
-n.b. it is possible for liga:classify/2 to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
+n.b. it is possible for ~liga:classify/2~ to return an empty list if none of the trigrams in the input string is contained in the model (i.e. it has no idea what language the string was written in):
 
 #+BEGIN_SRC erlang
     Result = liga:classify(M, "和而不同").
@@ -77,17 +77,32 @@ n.b. it is possible for liga:classify/2 to return an empty list if none of the t
 
 ** Calibration
 
-As well as the common_test suite test/calibration_SUITE.erl, a replication of the calibration in [2] is described in calibration/calibration.org. 
+As well as the common_test suite ~test/calibration_SUITE.erl~, a replication of the calibration in [2] is described in doc/calibration.org.
 
-** todo
+** Ivan's Original Research
 
-- write up calibration tests & compare with [2]
-- document liga_util:get_likely/1
-- document Ivan's Original Research in liga_labmap:score/3
-- test with languages/dialects that use Arabic alphabet
-- test with languages/dialects that use Hanzi
-- implement in some other languages: e.g., ML, C
-- consider implementing [3]
+I have added a small tweak to the algorithm.  The tweak is enabled by default, but can be reverted to the original by changing the value of a macro in ~liga_labmap.erl~:
+
+#+BEGIN_SRC erlang
+%%-define(VERSION, original).
+-define(VERSION, llaisdy).
+#+END_SRC
+
+This table shows the effect of the tweak on calibration test results:
+
+|Test                |Original    |Llaisdy     |Change  |
+|--------------------+------------+------------+--------|
+|{sample_size,5}     |87.333%     | 96.333%    |+9      |
+|{sample_size,10}    |97.500%     | 98.667%    |+1.167  |
+|{sample_size,25}    |98.000%     | 99.000%    |+1      |
+|{sample_size,50}    |99.167%     | 99.333%    |+0.166  |
+|spec                |93.333%     | 98.333%    |+5      |
+|gen                 |91.667%     | 85.185%    |-6.482  |
+|{holdouts,1}        |95.833%     |100.000%    |+4.167  |
+
+The effects are mostly positive, especially when the training data set is small.  I don't know (yet) why there is a negative effect in the generalisation test.
+
+The thinking behind the tweak is that a node (trigram) or edge (trigram pair) which appears in several languages has less significance per language than a node or edge which appears in fewer languages.  For example, the grapheme "ŵ" occurs in Welsh but few other scripts, so the presence of "ŵ" in a text is a strong clue that the text is in Welsh.  Consequently the weighting (which is used as a divisor) is multiplied by the number of languages the node/edge appears in.  See ~liga_labmap:score/3~ and ~liga_labmap:versioned_weights/3~.
 
 ** References
 
@@ -97,4 +112,12 @@ As well as the common_test suite test/calibration_SUITE.erl, a replication of th
 
 [3] Vogel, J. & Tresner-Kirsch, D., 2012, "Robust Language Identification in Short, Noisy Texts: Improvements to LIGA", https://www.mitre.org/sites/default/files/pdf/12_2971.pdf
 
-[4] https://github.com/ErikTromp/LIGA 
+
+** todo
+
+- document liga_util:get_likely/1
+- document tests with languages/dialects that use Arabic alphabet
+- test with languages/dialects that use Hanzi
+- implement in some other languages: e.g., OCaml, Rust, C
+- consider implementing [3]
+

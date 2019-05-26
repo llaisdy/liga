@@ -14,7 +14,7 @@
 -type liga_score()  :: list(label_score()). % sorted descending by score
 -type medge() :: {mnode(), mnode()}.
 -type mnode() :: trigram().
--type nonint() :: nonint().
+-type nonint() :: non_neg_integer().
 -type region() :: {emap|nmap, nonint()}.
 -type score() :: float().
 -type trigram() :: {nonint(), nonint(), nonint()}.

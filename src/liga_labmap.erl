@@ -1,6 +1,9 @@
 -module(liga_labmap).
 -include("types.hrl").
 
+%%-define(VERSION, original).
+-define(VERSION, llaisdy).
+
 -export([new/0
 	,get_labels/1
 	,get_weights/1
@@ -50,14 +53,12 @@ put(Key, Lab, LabMap) ->
     NewValMap = liga_intmap:increment(Lab, ValMap),
     maps:put(Key, NewValMap, LabMap).
 
-
 -spec score(nonint(), liga_score(), labmap()) -> liga_score().
 score(Weights, ScoreSoFar, LabMap) ->
-    maps:fold(fun(_, IntMap, ScoreAcc) -> 
-		      D = Weights * maps:size(IntMap),  % Ivan's original research
+    maps:fold(fun(_, IntMap, ScoreAcc) ->
+		      D = versioned_weights(?VERSION, Weights, IntMap),
 		      score_merge(D, IntMap, ScoreAcc)
 	      end, ScoreSoFar, LabMap).
-
 
 -spec submap(list(), labmap()) -> labmap().
 submap(Ts, LabMap) ->
@@ -72,6 +73,11 @@ submap(Ts, LabMap) ->
 
 
 %%%% private
+
+versioned_weights(original, Weights, _) ->
+    Weights;
+versioned_weights(llaisdy, Weights, IntMap) ->
+    Weights * maps:size(IntMap).
 
 -spec score_merge(float() | integer(), intmap(), liga_score()) -> liga_score().
 score_merge(N, IntMap, Score) ->

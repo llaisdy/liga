@@ -10,14 +10,14 @@ The data set used in [1] is available from the project webpage [2], direct link 
 
 ** Method
 
-These methods are implemented in calibration.erl.  The common_test suite calibration_SUITE.erl shows some sample runs.
+These methods are implemented in ~calibration.erl~.  The common_test suite ~calibration_SUITE.erl~ runs some sample tests and outputs accuracy rates.
 
 For each setup, do fifty different ten-fold validation tests & take average.
 
 *** Four sample size setups: 5%, 10%, 25%, 50%
 
 - training data: x% of each language
-- test data: ten from rest (all languages)
+- test data: ten examples from rest (all languages)
 
 *** Generalization/Specialization setup
 
@@ -29,12 +29,6 @@ For each setup, do fifty different ten-fold validation tests & take average.
 
 - training data: data from all accounts except holdout account(s) (how much? not specified)
 - test data: data from holdout account(s) (how much? not specified)
-
-** Results (TODO)
-
-Show accuracy rate (%) mean & standard deviation
-
-Have all results (not just means) available for report (cf Tromp graphs).
 
 ** References
 

@@ -18,6 +18,11 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+-ifdef(TEST).
+%% Make private functions accessible to common_test.
+-compile([export_all]).
+-endif.
+
 -record(state, {data_set :: atom(), 
 		data_dir :: string(), 
 		data     :: dict:dict(label(), 
@@ -120,7 +125,8 @@ handle_call({size, Lab, Acc}, _From, State=#state{data=Data}) ->
 
 %% {pc, PCage}
 %% {nm, N}
-handle_call({get_with_complement, Lab, Acc, NPC, NComp}, _From, State=#state{data=Data}) ->
+handle_call({get_with_complement, Lab, Acc, NPC, NComp}, _From,
+	    State=#state{data=Data}) ->
     F = fun(D) ->
 		All = get_all_or_empty(D, Acc),
 		Size = length(All),
@@ -129,7 +135,7 @@ handle_call({get_with_complement, Lab, Acc, NPC, NComp}, _From, State=#state{dat
 			  all -> Size;
 			  _   -> NGet + NComp
 		      end,
-		DecL = lists:sort([{random:uniform(), {Lab,N}} || N <- All]),
+		DecL = lists:sort([{rand:uniform(), {Lab,N}} || N <- All]),
 		{Sel,_} = lists:split(Ngc, [X||{_,X} <- DecL]),
 		lists:split(NGet, Sel)
 	end,
@@ -159,11 +165,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%% Private
 
 choose_one(L) ->
-    lists:nth(random:uniform(length(L)), L).
+    lists:nth(rand:uniform(length(L)), L).
 
 do_if_valid_key(Lab, Data, F, Else) ->
     case dict:find(Lab, Data) of
-	error -> Else;
+	error    -> Else;
 	{ok, LD} -> F(LD)
     end.
 
@@ -171,8 +177,7 @@ get_all_or_empty(D, all) ->
     dict:fold(fun(_, V, A) -> V ++ A end, [], D);
 get_all_or_empty(D, Acc) ->
     case dict:find(Acc, D) of
-	error ->
-	    [];
+	error    -> [];
 	{ok, AL} -> AL
     end.
 
@@ -192,7 +197,7 @@ get_data(liga, DataDir) ->
 	      ],
     lists:foldl(fun({Lab, Dir}, Dict) ->
 			LabDir = DataDir ++ "/" ++ Dir,
-			dict:store(Lab, import_data(liga, LabDir), Dict)
+			dict:store(Lab, import_data({liga, Dir}, LabDir), Dict)
 		end,
 		dict:new(),
 		LabDirs);
@@ -200,13 +205,15 @@ get_data(Set, Dir) ->
     {e_not_implemented, Set, Dir}.
 
 
--spec import_data(atom(), string()) -> dict:dict().
-import_data(liga, Dir) ->
-    filelib:fold_files(Dir, "\\d+_\\d+.txt", false,
+-spec import_data(atom() | tuple(), string()) -> dict:dict().
+import_data({liga, FPref}, Dir) ->
+    true = filelib:is_dir(Dir),
+    Regex = FPref ++ "_\\w+",
+    filelib:fold_files(Dir, Regex, false,
 		       fun(Fn, D) ->
-			       Ac = filename_to_account(Fn, liga),
-			       Str = util:read_file_utf8(Fn),
-			       dict:append(Ac, Str, D)
+			       {ok, File} = file:open(Fn, [read, binary]),
+			       Lines = util:read_utf8(File),
+			       dict:store(Fn, Lines, D)
 		       end, 
 		       dict:new());
 import_data(Set, Dir) ->
@@ -214,13 +221,9 @@ import_data(Set, Dir) ->
     
 
 shuffle(L) ->
-    [X||{_,X} <- lists:sort([{random:uniform(), N} || N <- L])].
+    [X||{_,X} <- lists:sort([{rand:uniform(), N} || N <- L])].
 
 valid_nget({nm, N}, Size) ->
     lists:min([N, Size]);
 valid_nget({pc, P}, Size) ->
     Size * P div 100.
-				 
-filename_to_account(FullFn, liga) ->
-    BaseFn = filename:basename(FullFn),
-    string:sub_word(BaseFn, 1, $_).

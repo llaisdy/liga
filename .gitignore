@@ -8,4 +8,3 @@ deps
 doc/ext/
 ebin
 erl_crash.dump
-test/*_data/
