@@ -32,7 +32,7 @@ calibrate(NTrials, NTestsPerTrial, TestSets) ->
     calibrate(NTrials, NTestsPerTrial, TestSets, DataSet).
 
 calibrate(NTrials, NTestsPerTrial, TestSets, DataSet) ->
-    data_server:start_link(DataSet),
+    {ok,_pid} = data_server:start_link(DataSet),
     lists:map(fun({Type, Sets}) -> 
 		      lists:map(fun(Set) ->
 					do_trials(NTrials, NTestsPerTrial, Type, Set)
@@ -41,8 +41,8 @@ calibrate(NTrials, NTestsPerTrial, TestSets, DataSet) ->
               end,
               TestSets).
 
--spec setup(atom(), atom(), non_neg_integer()) ->
-		   {[labelled_string()], [labelled_string()]}.
+-spec setup(atom(), atom() | non_neg_integer(), non_neg_integer()) ->
+		   {tuple(), {[labelled_string()], [labelled_string()]}}.
 setup(sample_size, PCage, NTests) ->
     %% for each language:
     %% training data: random x% of each language
@@ -68,9 +68,8 @@ setup(spec_gen, gen, NTests) ->
     %% test data 2 (generalisation) = data from all other accounts
     F = fun(Lab) ->
 		[Acc | Rest] = data_server:shuffle_accounts(Lab),
-		{TrainingData,_} = data_server:get_with_complement(Lab, Acc, 
-								   {pc,67}, 0),
-		TestData = data_server:get_from_accs(Lab, Rest, NTests),
+		{TrainingData,_} = data_server:get_with_complement(Lab, Acc, {pc,67}, 0),
+		TestData = data_server:get_from_accs(Lab, Rest, {nm, NTests}),
 		{TrainingData, TestData}
 	end,
     package_data(gen, F);

@@ -30,7 +30,7 @@ build_model(LD, NumRegions) ->
 			      [Label|Acc]
 		      end, [], LD),
     recv_all_sent(Labels),
-    send_ready(ProcDict),
+    ok = send_ready(ProcDict),
     {NMs, EMs} = recv_labmaps(Regions, {[], []}),
     NMap = liga_labmap:merge(NMs),
     EMap = liga_labmap:merge(EMs),
@@ -66,7 +66,9 @@ recv_all_sent(Labels) ->
     end.
 
 send_ready(ProcDict) ->
-    dict:map(fun(_,Pid) -> Pid ! ready end, ProcDict).
+    lists:foreach(
+      fun({_, Pid}) -> Pid ! ready end,
+      dict:to_list(ProcDict)).
 
 recv_labmaps([], Models) ->
     Models;

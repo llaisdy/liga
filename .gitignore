@@ -8,3 +8,4 @@ deps
 doc/ext/
 ebin
 erl_crash.dump
+logs/

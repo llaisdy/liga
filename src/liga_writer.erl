@@ -1,6 +1,6 @@
 -module(liga_writer).
 -export([write_model/2, write_model/3]).
--export([read_model/1, read_model/2]).
+-export([read_model/1]).
 
 -spec write_model(map(), module()) -> ok.
 write_model(Model, ModuleName) ->
@@ -13,20 +13,19 @@ write_model(Model, ModuleName, Directory) ->
 
 -spec read_model(string()) -> ok | {error, tuple()}.
 read_model(Filename) ->
-    read_model(erl, Filename).
-
--spec read_model(erl | beam, string()) -> ok | {error, tuple()}.
-read_model(erl, Filename) ->
     try
 	{ok, M} = compile:file(Filename),
-	code:add_path("."),
-	read_model(beam, M),
-	ok
+	true = code:add_path("."),
+	ok = load_module(M)
     catch
     	E:R ->
     	    {error, {E,R}}
-    end;
-read_model(beam, M) ->
+    end.
+
+%%%% private
+
+-spec load_module(atom()) -> ok | {error, tuple()}.
+load_module(M) ->
     try
 	false = code:purge(M),
 	{module, M} = code:load_file(M),
@@ -35,9 +34,6 @@ read_model(beam, M) ->
 	E:R ->
 	    {error, {E,R}}
     end.
-
-
-%%%% private
 
 -spec make_fn(module(), string()) -> string().
 make_fn(ModuleName, Directory) ->

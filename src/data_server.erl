@@ -23,9 +23,9 @@
 -compile([export_all]).
 -endif.
 
--record(state, {data_set :: atom(), 
-		data_dir :: string(), 
-		data     :: dict:dict(label(), 
+-record(state, {data_set :: atom(),
+		data_dir :: string(),
+		data     :: dict:dict(label(),
 				      dict:dict(string(), list(string())))
 	       }).
 
@@ -67,20 +67,21 @@ get_label_account() ->
     Acc = choose_one(get_accounts(Lab)),
     {Lab, Acc}.
 
--spec get_with_complement(atom(), pcage(), non_neg_integer() | all) 
+-type npctup() :: {nm | pc, non_neg_integer()}.
+-spec get_with_complement(atom(), npctup(), non_neg_integer() | all) 
 			 -> {[labelled_string()],[labelled_string()]}.
-get_with_complement(Lab, PCage, NComp) ->
-    gen_server:call(?MODULE, {get_with_complement, Lab, all, PCage, NComp}).
+get_with_complement(Lab, NPC, NComp) ->
+    gen_server:call(?MODULE, {get_with_complement, Lab, all, NPC, NComp}).
 
--type pcage() :: non_neg_integer().
--spec get_with_complement(atom(), any(), pcage(), non_neg_integer() | all) 
+-spec get_with_complement(atom(), any(), npctup(), non_neg_integer() | all) 
 			 -> {[labelled_string()],[labelled_string()]}.
-get_with_complement(Lab, Acc, PCage, NComp) ->
-    gen_server:call(?MODULE, {get_with_complement, Lab, Acc, PCage, NComp}).
+get_with_complement(Lab, Acc, NPC, NComp) ->
+    gen_server:call(?MODULE, {get_with_complement, Lab, Acc, NPC, NComp}).
 
-get_from_accs(Lab, Accs, NTests) ->
+-spec get_from_accs(atom(), list(), npctup()) -> [labelled_string()].
+get_from_accs(Lab, Accs, NPC) ->
     lists:foldl(fun(Ra, Ac) ->
-			{X,_} = get_with_complement(Lab, Ra, {nm, NTests}, 0),
+			{X,_} = get_with_complement(Lab, Ra, NPC, 0),
 			X ++ Ac
 		end,
 		[],
@@ -204,7 +205,6 @@ get_data(liga, DataDir) ->
 get_data(Set, Dir) ->
     {e_not_implemented, Set, Dir}.
 
-
 -spec import_data(atom() | tuple(), string()) -> dict:dict().
 import_data({liga, FPref}, Dir) ->
     true = filelib:is_dir(Dir),
@@ -215,10 +215,7 @@ import_data({liga, FPref}, Dir) ->
 			       Lines = util:read_utf8(File),
 			       dict:store(Fn, Lines, D)
 		       end, 
-		       dict:new());
-import_data(Set, Dir) ->
-    {e_not_implemented, Set, Dir}.
-    
+		       dict:new()).
 
 shuffle(L) ->
     [X||{_,X} <- lists:sort([{rand:uniform(), N} || N <- L])].
@@ -227,3 +224,7 @@ valid_nget({nm, N}, Size) ->
     lists:min([N, Size]);
 valid_nget({pc, P}, Size) ->
     Size * P div 100.
+				 
+filename_to_account(FullFn, aoc) ->
+    BaseFn = filename:basename(FullFn),
+    string:sub_word(BaseFn, 1, $_).
