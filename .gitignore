@@ -9,3 +9,7 @@ doc/ext/
 ebin
 erl_crash.dump
 logs/
+
+# for erlang.mk
+.erlang.mk
+liga.d

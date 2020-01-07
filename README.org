@@ -8,6 +8,8 @@ n.b.: As far as I know, at time of writing (January 2015), there is no other ope
 
 Liga uses erlang.mk, so just ~make~.  There are no dependencies.  The ~test/~ directory has some eunit and common test suites, which can be run with ~make eunit~ and ~make ct~.  All tests should pass.
 
+n.b.: The github continuous integration tests (in ~.github/workflows/erlang.yml~) don't run the common test suites, as those tests require datasets not included in the repo.
+
 ** Usage
 
 The basic idea is that you train a model with a set of labelled strings, and save the model.  Then you can classify strings against this model.
@@ -111,7 +113,6 @@ The thinking behind the tweak is that a node (trigram) or edge (trigram pair) wh
 [2] Tromp, E. & Pechenizkiy, M., 2011, "Graph-Based N-gram Language Identification on Short Texts", http://www.win.tue.nl/~mpechen/publications/pubs/TrompPechenizkiy_LIGA_Benelearn11.pdf
 
 [3] Vogel, J. & Tresner-Kirsch, D., 2012, "Robust Language Identification in Short, Noisy Texts: Improvements to LIGA", https://www.mitre.org/sites/default/files/pdf/12_2971.pdf
-
 
 ** todo
 
