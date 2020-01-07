@@ -3,6 +3,8 @@
 *.plt
 *~
 .eunit
+.rebar3
+_build
 _rel
 deps
 doc/ext/
