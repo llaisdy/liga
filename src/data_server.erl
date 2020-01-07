@@ -224,7 +224,3 @@ valid_nget({nm, N}, Size) ->
     lists:min([N, Size]);
 valid_nget({pc, P}, Size) ->
     Size * P div 100.
-				 
-filename_to_account(FullFn, aoc) ->
-    BaseFn = filename:basename(FullFn),
-    string:sub_word(BaseFn, 1, $_).

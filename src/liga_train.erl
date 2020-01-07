@@ -92,10 +92,10 @@ broadcast_label(Label, Strings, NumRegions, ProcDict, BossPid) ->
     BossPid ! {done, Label}.
 
 broadcast_string(Label, String, NRs, ProcDict, BossPid) ->
-    Ts = liga_util:string_to_trigrams(String),
+    Ts = trigrams:string_to_trigrams(String),
     spawn(?MODULE, send_trigrams, 
 	  [Label, Ts, NRs, ProcDict, self()]),
-    Es = liga_util:trigrams_to_edges(Ts),
+    Es = trigrams:trigrams_to_edges(Ts),
     spawn(?MODULE, send_edges, 
 	  [Label, Es, NRs, ProcDict, self()]),
     recv_done(2),

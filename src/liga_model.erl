@@ -35,9 +35,9 @@ make_sub_graph(M, S) when is_atom(M) ->
     LG = M:model(),
     make_sub_graph(LG, S);
 make_sub_graph(#{nodes:=NodeMap, edges:=EdgeMap}, S) ->
-    Ts = liga_util:string_to_trigrams(S),
+    Ts = trigrams:string_to_trigrams(S),
     Ns = liga_labmap:submap(Ts, NodeMap),
-    Es = liga_labmap:submap(liga_util:trigrams_to_edges(Ts), EdgeMap),
+    Es = liga_labmap:submap(trigrams:trigrams_to_edges(Ts), EdgeMap),
     Ls = liga_labmap:get_labels(Ns),
     make(Ls, Ns, Es).
 
@@ -50,7 +50,7 @@ score(#{node_weights:=NW, edge_weights:=EW, nodes:=NodeMap, edges:=EdgeMap}) ->
 
 -spec import_nodes_edges(ligaModel(), string(), label()) -> ligaModel().
 import_nodes_edges(Model, String, Label) ->
-    Ts = liga_util:string_to_trigrams(String),
+    Ts = trigrams:string_to_trigrams(String),
     M1 = lists:foldl(fun(T, Acc1) ->
 			     import_node(Acc1, T, Label)
 		     end, 
@@ -58,7 +58,7 @@ import_nodes_edges(Model, String, Label) ->
     lists:foldl(fun(E, Acc2) ->
 			import_edge(Acc2, E, Label)
 		end, 
-		M1, liga_util:trigrams_to_edges(Ts)).
+		M1, trigrams:trigrams_to_edges(Ts)).
 
 -spec update_labels(ligaModel(), label()) -> ligaModel().
 update_labels(#{labels:=Ls}=M, L) ->

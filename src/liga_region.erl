@@ -12,19 +12,17 @@ init_regions(N) ->
     M = N - 1,
     [{emap, M}, {nmap, M} | init_regions(M)].
 
--spec node_to_region(mnode(), nonint()) -> region().
+-spec node_to_region(mnode(), nonegint()) -> region().
 node_to_region({X, Y, Z}, N) ->
     region(nmap, {X, Y, Z}, N).
 
--spec edge_to_region(medge(), nonint()) -> region().
+-spec edge_to_region(medge(), nonegint()) -> region().
 edge_to_region({{X, _, Y}, {_, Z, _}}, N) ->
     region(emap, {X, Y, Z}, N).
 
     
 %%%% private
 
--spec region(atom(), {nonint(), nonint(), nonint()}, nonint()) -> region().
+-spec region(atom(), {nonegint(), nonegint(), nonegint()}, nonegint()) -> region().
 region(Type, {X, Y, Z}, N) ->
     {Type, lists:sum([X, Y, Z]) rem N}.
-
-    

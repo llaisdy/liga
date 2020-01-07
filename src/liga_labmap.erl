@@ -29,7 +29,7 @@ get_labels(LabMap) ->
 	      end,
 	      [], LabMap).
 
--spec get_weights(labmap()) -> nonint().
+-spec get_weights(labmap()) -> nonegint().
 get_weights(LabMap) ->
     IntMaps = maps:values(LabMap),
     lists:sum([lists:sum(maps:values(M)) || M <- IntMaps]).
@@ -53,7 +53,7 @@ put(Key, Lab, LabMap) ->
     NewValMap = liga_intmap:increment(Lab, ValMap),
     maps:put(Key, NewValMap, LabMap).
 
--spec score(nonint(), liga_score(), labmap()) -> liga_score().
+-spec score(nonegint(), liga_score(), labmap()) -> liga_score().
 score(Weights, ScoreSoFar, LabMap) ->
     maps:fold(fun(_, IntMap, ScoreAcc) ->
 		      D = versioned_weights(?VERSION, Weights, IntMap),
