@@ -2,7 +2,7 @@
 
 {application, liga,
  [{description,"Language Identification: a Graph-based Approach"}
- ,{vsn,"2.0.0"}
+ ,{vsn,"2.1.0"}
  ,{modules, []}
  ,{registered, []}
  ,{applications, 
